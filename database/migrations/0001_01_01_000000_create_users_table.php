@@ -17,10 +17,13 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+<<<<<<< HEAD
             $table->string('role')->default('pencari_kerja'); // pemerintah, perusahaan, pencari_kerja
             $table->string('phone')->nullable();
             $table->boolean('is_active')->default(true);
             $table->string('avatar')->nullable();
+=======
+>>>>>>> b1794c07a98bff85dae7245fe147f799aeb9e041
             $table->rememberToken();
             $table->timestamps();
         });
