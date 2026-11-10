@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\JobApplicationController;
+use App\Http\Controllers\JobApplicationStatusController;
 use App\Http\Controllers\Jobseeker\JobseekerAuthController;
 use App\Http\Controllers\Jobseeker\JobseekerCvController;
 use App\Http\Controllers\Jobseeker\JobseekerProfileController;
+use App\Http\Controllers\PublicController;
 use App\Services\NikVerificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +18,9 @@ Route::get('/', function (Request $request, NikVerificationService $nikService) 
 
     return app(JobseekerAuthController::class)->showRegister($request, $nikService);
 })->name('home');
+
+Route::get('/lowongan', [PublicController::class, 'jobs'])->name('jobs.index');
+Route::get('/lowongan/{id}', [PublicController::class, 'jobDetail'])->whereNumber('id')->name('jobs.show');
 
 // Alias standar autentikasi Laravel
 Route::get('/login', [JobseekerAuthController::class, 'showLogin'])->middleware('guest')->name('login');
@@ -30,6 +36,11 @@ Route::prefix('pencari-kerja')->name('jobseeker.')->group(function () {
 
         Route::get('/masuk', [JobseekerAuthController::class, 'showLogin'])->name('login');
         Route::post('/masuk', [JobseekerAuthController::class, 'login'])->name('login.submit');
+    });
+
+    Route::middleware(['auth', 'can:access-job-applications'])->group(function () {
+        Route::post('/lowongan/{id}/lamar', [JobApplicationController::class, 'applyJob'])->whereNumber('id')->name('apply');
+        Route::get('/lamaran', [JobApplicationStatusController::class, 'myApplications'])->name('applications');
     });
 
     Route::middleware('auth')->group(function () {
