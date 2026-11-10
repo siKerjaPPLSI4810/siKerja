@@ -23,6 +23,16 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {{ request()->routeIs('jobs.*') ? 'active fw-semibold' : '' }}"
+                           href="{{ route('jobs.index') }}">Lowongan Kerja</a>
+                    </li>
+                    @can('access-job-applications')
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('jobseeker.applications') ? 'active fw-semibold' : '' }}"
+                               href="{{ route('jobseeker.applications') }}">Riwayat Lamaran</a>
+                        </li>
+                    @endcan
                     @auth
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('jobseeker.profile.*') ? 'active fw-semibold' : '' }}"
