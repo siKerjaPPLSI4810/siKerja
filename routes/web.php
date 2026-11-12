@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Company\CompanyAuthController;
+use App\Http\Controllers\Company\CompanyJobController;
 use App\Http\Controllers\Company\CompanyProfileController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobApplicationStatusController;
@@ -32,7 +33,7 @@ Route::get('/lowongan/{id}', [PublicController::class, 'jobDetail'])->whereNumbe
 Route::get('/login', [JobseekerAuthController::class, 'showLogin'])->middleware('guest')->name('login');
 Route::get('/register', [JobseekerAuthController::class, 'showRegister'])->middleware('guest')->name('register');
 
-// Epic 1 - Feature 1.1: Pendaftaran, Verifikasi NIK, Profil, & CV Otomatis Pencari Kerja
+// Epic 1 - Feature 1.1 & 1.2
 Route::prefix('pencari-kerja')->name('jobseeker.')->group(function () {
     Route::middleware('guest')->group(function () {
         // PBI 1.1.1 - Mendaftar dan Memverifikasi Identitas Pencari Kerja (KF-01)
@@ -84,10 +85,10 @@ Route::prefix('pencari-kerja')->name('jobseeker.')->group(function () {
     });
 });
 
-// Epic 2 - Feature 2.1: Pendaftaran dan Profil Perusahaan
+// Epic 2 - Feature 2.1 & Feature 2.2 
 Route::prefix('perusahaan')->name('company.')->group(function () {
     Route::middleware('guest')->group(function () {
-        // PBI 2.1.1 - Mendaftar dan Memvalidasi Identitas Perusahaan
+        // PBI 2.1.1 - Mendaftar dan Memvalidasi Identitas Perusahaan (Abyan)
         Route::get('/daftar', [CompanyAuthController::class, 'showRegister'])->name('register');
         Route::post('/daftar', [CompanyAuthController::class, 'register'])->name('register.submit');
         Route::post('/cek-identitas', [CompanyAuthController::class, 'checkIdentity'])->name('identity.check');
@@ -99,11 +100,23 @@ Route::prefix('perusahaan')->name('company.')->group(function () {
     Route::middleware('auth')->group(function () {
         Route::post('/keluar', [CompanyAuthController::class, 'logout'])->name('logout');
 
-        // PBI 2.1.2 - Mengelola Profil Perusahaan & PBI 2.1.1 Hasil Pemeriksaan
+        // PBI 2.1.2 - Mengelola Profil Perusahaan & PBI 2.1.1 Hasil Pemeriksaan 
         Route::get('/profil', [CompanyProfileController::class, 'index'])->name('profile.index');
         Route::get('/profil/edit', [CompanyProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profil', [CompanyProfileController::class, 'update'])->name('profile.update');
         Route::post('/profil/verifikasi-identitas', [CompanyProfileController::class, 'verifyIdentity'])->name('profile.identity.verify');
         Route::get('/profil/dokumen', [CompanyProfileController::class, 'downloadDocument'])->name('profile.document.download');
+
+        // PBI 2.2.2 - Mengelola dan Memantau Status Lowongan Kerja
+        Route::get('/lowongan', [CompanyJobController::class, 'index'])->name('jobs.index');
+
+        // PBI 2.2.1 - Membuat dan Mengajukan Lowongan Kerja
+        Route::get('/lowongan/tambah', [CompanyJobController::class, 'create'])->name('jobs.create');
+        Route::post('/lowongan', [CompanyJobController::class, 'store'])->name('jobs.store');
+
+        // PBI 2.2.3 - Mengubah dan Menutup Lowongan Kerja
+        Route::get('/lowongan/{id}/edit', [CompanyJobController::class, 'edit'])->whereNumber('id')->name('jobs.edit');
+        Route::put('/lowongan/{id}', [CompanyJobController::class, 'update'])->whereNumber('id')->name('jobs.update');
+        Route::post('/lowongan/{id}/toggle-status', [CompanyJobController::class, 'toggleStatus'])->whereNumber('id')->name('jobs.toggle');
     });
 });
