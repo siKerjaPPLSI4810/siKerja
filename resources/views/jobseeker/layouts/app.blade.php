@@ -72,6 +72,11 @@
                                 Masuk
                             </a>
                         </li>
+                        <li class="nav-item border-start ps-2 ms-2 d-none d-lg-block">
+                            <a class="btn btn-sm btn-outline-light" href="{{ route('company.login') }}">
+                                Untuk Perusahaan
+                            </a>
+                        </li>
                     @endauth
                 </ul>
             </div>

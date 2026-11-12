@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Company\CompanyAuthController;
+use App\Http\Controllers\Company\CompanyProfileController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobApplicationStatusController;
 use App\Http\Controllers\Jobseeker\JobseekerAuthController;
@@ -13,6 +15,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', function (Request $request, NikVerificationService $nikService) {
     if (Auth::check()) {
+        if (Auth::user()->role === 'perusahaan') {
+            return redirect()->route('company.profile.index');
+        }
+
         return redirect()->route('jobseeker.profile.index');
     }
 
@@ -75,5 +81,29 @@ Route::prefix('pencari-kerja')->name('jobseeker.')->group(function () {
         Route::get('/cv', [JobseekerCvController::class, 'show'])->name('cv.show');
         Route::get('/cv/cetak', [JobseekerCvController::class, 'print'])->name('cv.print');
         Route::get('/cv/unduh', [JobseekerCvController::class, 'download'])->name('cv.download');
+    });
+});
+
+// Epic 2 - Feature 2.1: Pendaftaran dan Profil Perusahaan
+Route::prefix('perusahaan')->name('company.')->group(function () {
+    Route::middleware('guest')->group(function () {
+        // PBI 2.1.1 - Mendaftar dan Memvalidasi Identitas Perusahaan
+        Route::get('/daftar', [CompanyAuthController::class, 'showRegister'])->name('register');
+        Route::post('/daftar', [CompanyAuthController::class, 'register'])->name('register.submit');
+        Route::post('/cek-identitas', [CompanyAuthController::class, 'checkIdentity'])->name('identity.check');
+
+        Route::get('/masuk', [CompanyAuthController::class, 'showLogin'])->name('login');
+        Route::post('/masuk', [CompanyAuthController::class, 'login'])->name('login.submit');
+    });
+
+    Route::middleware('auth')->group(function () {
+        Route::post('/keluar', [CompanyAuthController::class, 'logout'])->name('logout');
+
+        // PBI 2.1.2 - Mengelola Profil Perusahaan & PBI 2.1.1 Hasil Pemeriksaan
+        Route::get('/profil', [CompanyProfileController::class, 'index'])->name('profile.index');
+        Route::get('/profil/edit', [CompanyProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profil', [CompanyProfileController::class, 'update'])->name('profile.update');
+        Route::post('/profil/verifikasi-identitas', [CompanyProfileController::class, 'verifyIdentity'])->name('profile.identity.verify');
+        Route::get('/profil/dokumen', [CompanyProfileController::class, 'downloadDocument'])->name('profile.document.download');
     });
 });
