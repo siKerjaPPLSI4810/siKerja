@@ -39,4 +39,22 @@ class User extends Authenticatable
     {
         return $this->hasOne(JobseekerProfile::class);
     }
+
+    /**
+     * Get the company profile associated with the user.
+     */
+    public function companyProfile(): HasOne
+    {
+        return $this->hasOne(CompanyProfile::class);
+    }
+
+    public function isCompany(): bool
+    {
+        return $this->role === 'perusahaan';
+    }
+
+    public function isJobseeker(): bool
+    {
+        return $this->role === 'pencari_kerja';
+    }
 }

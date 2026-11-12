@@ -22,5 +22,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::define('access-job-applications', fn (User $user): bool => $user->role === 'pencari_kerja');
+        Gate::define('access-company', fn (User $user): bool => $user->role === 'perusahaan');
     }
 }
