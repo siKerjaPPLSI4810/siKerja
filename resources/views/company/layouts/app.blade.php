@@ -25,14 +25,27 @@
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('jobs.*') ? 'active fw-semibold' : '' }}"
-                           href="{{ route('jobs.index') }}">Lowongan Kerja</a>
+                        href="{{ route('jobs.index') }}">Lowongan Kerja</a>
                     </li>
                     @auth
                         @if (auth()->user()->role === 'perusahaan')
                             <li class="nav-item">
                                 <a class="nav-link {{ request()->routeIs('company.profile.*') ? 'active fw-semibold' : '' }}"
-                                   href="{{ route('company.profile.index') }}">
+                                    href="{{ route('company.profile.index') }}">
                                     Profil Perusahaan
+                                </a>
+                            </li>
+                            {{-- Menu Navigasi Feature 2.2 (PBI 2.2.1, 2.2.2, 2.2.3 - Rifqi Ahmad Fauzy) --}}
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('company.jobs.index', 'company.jobs.edit') ? 'active fw-semibold' : '' }}"
+                                    href="{{ route('company.jobs.index') }}">
+                                    Kelola Lowongan
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link {{ request()->routeIs('company.jobs.create') ? 'active fw-semibold' : '' }}"
+                                    href="{{ route('company.jobs.create') }}">
+                                    Buat Lowongan
                                 </a>
                             </li>
                         @endif
@@ -52,13 +65,13 @@
                     @else
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('company.register') ? 'active fw-semibold' : '' }}"
-                               href="{{ route('company.register') }}">
+                                href="{{ route('company.register') }}">
                                 Daftar Akun Perusahaan
                             </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('company.login') ? 'active fw-semibold' : '' }}"
-                               href="{{ route('company.login') }}">
+                                href="{{ route('company.login') }}">
                                 Masuk Perusahaan
                             </a>
                         </li>
