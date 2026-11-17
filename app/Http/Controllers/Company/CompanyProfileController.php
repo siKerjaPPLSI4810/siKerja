@@ -4,11 +4,11 @@ namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
 use App\Services\CompanyVerificationService;
+use App\Services\CompanyDocumentUpload;
+use App\Services\CompanyInspectionDocument;
 use App\Services\NikVerificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -48,9 +48,7 @@ class CompanyProfileController extends Controller
                 $profile->npwp,
                 $profile->company_document_path,
                 $profile->id,
-                $profile->verification_status === 'verified'
-                    ? 'valid'
-                    : ($profile->verification_status === 'rejected' ? 'invalid' : 'unconfirmed')
+                null
             );
         }
 
@@ -86,7 +84,7 @@ class CompanyProfileController extends Controller
     /**
      * Menyimpan perubahan profil perusahaan dengan validasi data wajib dan format (PBI 2.1.2).
      */
-    public function update(Request $request, CompanyVerificationService $verificationService): RedirectResponse
+    public function update(Request $request, CompanyVerificationService $verificationService, CompanyDocumentUpload $documents): RedirectResponse
     {
         $this->ensureCompanyUser($request);
 
@@ -120,7 +118,10 @@ class CompanyProfileController extends Controller
             'company_document.max' => 'Ukuran berkas dokumen tidak boleh lebih dari 5MB.',
         ]);
 
-        DB::transaction(function () use ($user, $profile, $validated, $request, $verificationService) {
+        $documents->persist($request->file('company_document'), function (?string $newDocumentPath) use ($user, $profile, $validated, $request, $verificationService) {
+            $profile = $profile->newQuery()->lockForUpdate()->findOrFail($profile->id);
+            $finalInspection = $profile->inspection()->whereIn('decision', ['verified', 'rejected'])->exists();
+            abort_if($finalInspection && $request->hasFile('company_document'), 409, 'Dokumen hasil pemeriksaan final tidak dapat diganti melalui profil.');
             // Update User
             $user->update([
                 'name' => $validated['name'],
@@ -129,10 +130,7 @@ class CompanyProfileController extends Controller
             ]);
 
             // Update Dokumen jika ada upload baru
-            $documentPath = $profile->company_document_path;
-            if ($request->hasFile('company_document')) {
-                $documentPath = $request->file('company_document')->store('company_documents', 'public');
-            }
+            $documentPath = $newDocumentPath ?? $profile->company_document_path;
 
             // Format website jika tidak ada protokol
             $website = $validated['website'] ?? null;
@@ -144,7 +142,7 @@ class CompanyProfileController extends Controller
                 ? $verificationService->formatNpwp($validated['npwp'])
                 : $profile->npwp;
 
-            $profile->update([
+            $profile->fill([
                 'company_name' => $validated['company_name'],
                 'address' => $validated['address'] ?? null,
                 'province' => $validated['province'] ?? null,
@@ -153,6 +151,8 @@ class CompanyProfileController extends Controller
                 'npwp' => $formattedNpwp,
                 'company_document_path' => $documentPath,
             ]);
+            abort_if($finalInspection && $profile->isDirty(), 409, 'Identitas hasil pemeriksaan final tidak dapat diubah melalui profil.');
+            $profile->save();
         });
 
         return redirect()
@@ -181,34 +181,30 @@ class CompanyProfileController extends Controller
             $scenarioOverride
         );
 
-        $profile->update([
-            'npwp' => $customNpwp ? $verificationService->formatNpwp($customNpwp) : $profile->npwp,
-            'verification_status' => $inspection['status'],
-            'verification_notes' => $inspection['message'],
-        ]);
+        // Read-only format check. Only government inspection may persist legal decisions.
 
         return redirect()
             ->route('company.profile.index')
             ->with('identity_inspection', $inspection)
             ->with(
                 $inspection['status'] === 'rejected' ? 'error' : 'status',
-                'Hasil pemeriksaan identitas diperbarui: '.$inspection['status_label']
+                'Pengecekan format selesai; keputusan legalitas hanya ditetapkan Admin Pemerintah.'
             );
     }
 
     /**
      * Mengunduh berkas dokumen legalitas perusahaan.
      */
-    public function downloadDocument(Request $request): StreamedResponse|RedirectResponse
+    public function downloadDocument(Request $request, CompanyInspectionDocument $documents): StreamedResponse|RedirectResponse
     {
         $this->ensureCompanyUser($request);
 
         $profile = $request->user()->companyProfile;
 
-        if (! $profile || ! $profile->company_document_path || ! Storage::disk('public')->exists($profile->company_document_path)) {
-            return back()->with('error', 'Dokumen legalitas perusahaan belum diunggah atau tidak ditemukan.');
+        if (! $profile || $documents->path($profile) === null) {
+            return back()->with('error', 'Dokumen belum tersedia pada penyimpanan private atau belum dimigrasikan.');
         }
 
-        return Storage::disk('public')->download($profile->company_document_path);
+        return $documents->download($profile);
     }
 }

@@ -6,10 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class CompanyProfile extends Model
 {
     use HasFactory;
+
+    // Legacy notes may contain government findings. Never serialize them by default.
+    protected $hidden = ['verification_notes', 'inspection', 'verified_by', 'verifier'];
 
     protected $fillable = [
         'user_id',
@@ -40,6 +44,11 @@ class CompanyProfile extends Model
         return $this->hasMany(JobPosting::class);
     }
 
+    public function inspection(): HasOne
+    {
+        return $this->hasOne(CompanyInspection::class);
+    }
+
     public function isVerified(): bool
     {
         return $this->verification_status === 'verified';
@@ -53,6 +62,22 @@ class CompanyProfile extends Model
     public function isPending(): bool
     {
         return $this->verification_status === 'pending';
+    }
+
+    public static function verificationMessageForStatus(?string $status): string
+    {
+        return match ($status) {
+            'verified' => 'Status perusahaan terverifikasi.',
+            'rejected' => 'Status verifikasi perusahaan ditolak.',
+            'pending' => 'Status perusahaan menunggu pemeriksaan atau tindak lanjut.',
+            default => 'Status verifikasi perusahaan belum tersedia.',
+        };
+    }
+
+    public function getPublicVerificationMessageAttribute(): string
+    {
+        // Do not fall back to stored notes, including potentially contaminated legacy data.
+        return self::verificationMessageForStatus($this->verification_status);
     }
 
     public function getFormattedStatusAttribute(): string

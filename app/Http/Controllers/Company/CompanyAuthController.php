@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\CompanyProfile;
 use App\Models\User;
 use App\Services\CompanyVerificationService;
+use App\Services\CompanyDocumentUpload;
 use App\Services\NikVerificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class CompanyAuthController extends Controller
@@ -73,7 +73,7 @@ class CompanyAuthController extends Controller
     /**
      * Mendaftarkan akun perusahaan dan memvalidasi identitas legal (PBI 2.1.1).
      */
-    public function register(Request $request, CompanyVerificationService $verificationService): RedirectResponse
+    public function register(Request $request, CompanyVerificationService $verificationService, CompanyDocumentUpload $documents): RedirectResponse
     {
         $validated = $request->validate([
             'company_name' => ['required', 'string', 'max:255'],
@@ -123,12 +123,7 @@ class CompanyAuthController extends Controller
                 ]);
         }
 
-        $documentPath = null;
-        if ($request->hasFile('company_document')) {
-            $documentPath = $request->file('company_document')->store('company_documents', 'public');
-        }
-
-        $user = DB::transaction(function () use ($validated, $documentPath, $inspection, $verificationService) {
+        $user = $documents->persist($request->file('company_document'), function (?string $documentPath) use ($validated, $inspection, $verificationService) {
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -147,7 +142,7 @@ class CompanyAuthController extends Controller
                 'city' => $validated['city'] ?? null,
                 'website' => $validated['website'] ?? null,
                 'company_document_path' => $documentPath,
-                'verification_status' => $inspection['status'], // 'verified' atau 'pending'
+                'verification_status' => 'pending', // Official legal decisions belong to government inspection.
                 'verification_notes' => $inspection['message'],
             ]);
 

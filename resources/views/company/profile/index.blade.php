@@ -44,13 +44,13 @@
                 <div class="alert {{ $profile->status_alert_class }} py-2 small mb-3">
                     @if ($profile->isVerified())
                         <strong>SKENARIO VALID (TERVERIFIKASI)</strong><br>
-                        {{ $profile->verification_notes ?? 'Pemeriksaan berhasil: Identitas dan NPWP perusahaan valid serta terverifikasi.' }}
+                        {{ $profile->public_verification_message }}
                     @elseif ($profile->isRejected())
                         <strong>SKENARIO TIDAK VALID (DITOLAK)</strong><br>
-                        {{ $profile->verification_notes ?? 'Pemeriksaan gagal: Identitas perusahaan dinyatakan tidak valid.' }}
+                        {{ $profile->public_verification_message }}
                     @else
                         <strong>SKENARIO BELUM DAPAT DIPASTIKAN</strong><br>
-                        {{ $profile->verification_notes ?? 'Pemeriksaan tertunda: Identitas menunggu verifikasi manual oleh petugas.' }}
+                        {{ $profile->public_verification_message }}
                     @endif
                 </div>
 
