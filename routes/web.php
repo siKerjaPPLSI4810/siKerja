@@ -14,6 +14,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+Route::prefix('pemerintah/status-verifikasi-perusahaan')->name('government.company-verification-statuses.')
+    ->middleware(['auth', 'can:access-government'])->group(function () {
+        $controller = \App\Http\Controllers\Government\CompanyVerificationMonitoringController::class;
+        Route::get('/', [$controller, 'index'])->name('index');
+        Route::get('/{companyProfile}', [$controller, 'show'])->whereNumber('companyProfile')->name('show');
+    });
+
+Route::prefix('pemerintah/api/status-verifikasi-perusahaan')->name('government.company-verification-statuses.api.')
+    ->middleware(['auth', 'can:access-government'])->group(function () {
+        $controller = \App\Http\Controllers\Government\CompanyVerificationMonitoringDataController::class;
+        Route::get('/', [$controller, 'index'])->name('index');
+        Route::get('/{companyProfile}/riwayat', [$controller, 'history'])->whereNumber('companyProfile')->name('history');
+        Route::get('/{companyProfile}', [$controller, 'show'])->whereNumber('companyProfile')->name('show');
+        Route::patch('/{companyProfile}', [$controller, 'update'])->whereNumber('companyProfile')->name('update');
+    });
+
 Route::prefix('pemerintah/pemeriksaan-perusahaan')->name('government.company-inspections.')
     ->middleware(['auth', 'can:access-government'])->group(function () {
         Route::get('/', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'index'])->name('index');

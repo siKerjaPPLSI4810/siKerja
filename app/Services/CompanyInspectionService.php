@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\CompanyInspection;
 use App\Models\CompanyProfile;
+use App\Models\CompanyVerificationStatusHistory;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -47,6 +48,9 @@ class CompanyInspectionService
                 throw new ConflictHttpException('Data berubah atau keputusan final sudah tersimpan. Muat ulang dan periksa kembali.');
             }
 
+            $oldStatus = $locked->verification_status;
+            $newStatus = $input['decision'];
+
             $inspection = $locked->inspection()->updateOrCreate([], [
                 'reviewed_by' => $reviewer->id,
                 'method' => 'manual_oss_rba',
@@ -62,6 +66,33 @@ class CompanyInspectionService
                 'verification_notes' => CompanyProfile::verificationMessageForStatus($input['decision']),
                 'verified_by' => $reviewer->id,
             ]);
+
+            if ($oldStatus !== $newStatus) {
+                if ((int) $inspection->company_profile_id !== (int) $locked->id) {
+                    throw new \LogicException('Inspection/company mismatch.');
+                }
+                // Parent lock serializes writers even when no history row exists yet.
+                $lastSequence = CompanyVerificationStatusHistory::query()
+                    ->where('company_profile_id', $locked->id)->max('sequence') ?? 0;
+                if ($lastSequence < 0 || $lastSequence >= PHP_INT_MAX) {
+                    throw new \OverflowException('Invalid history sequence.');
+                }
+                $ossLabel = ['matched' => 'sesuai', 'mismatched' => 'tidak sesuai', 'unconfirmed' => 'belum pasti'][$input['oss_check_result']] ?? 'tidak dikenal';
+                $administrativeLabel = ['complete' => 'lengkap', 'incomplete' => 'tidak lengkap', 'unconfirmed' => 'belum pasti'][$input['administrative_result']] ?? 'tidak dikenal';
+                CompanyVerificationStatusHistory::create([
+                    'company_profile_id' => $locked->id,
+                    'company_inspection_id' => $inspection->id,
+                    'sequence' => (int) $lastSequence + 1,
+                    'event_type' => 'status_changed',
+                    'old_status' => $oldStatus,
+                    'new_status' => $newStatus,
+                    'actor_user_id' => $reviewer->id,
+                    'actor_name_snapshot' => $reviewer->name,
+                    'reason_code' => 'manual_inspection_decision',
+                    'reason' => sprintf('Pemeriksaan manual: OSS %s; administrasi %s; keputusan %s.', $ossLabel, $administrativeLabel, $newStatus),
+                    'changed_at' => now('UTC'),
+                ]);
+            }
 
             return $inspection;
         }, 3);

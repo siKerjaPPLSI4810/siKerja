@@ -18,6 +18,9 @@
             @endif
             <span class="text-white me-auto">Pemeriksaan Perusahaan</span>
             @can('access-government')
+                @if (Route::has('government.company-verification-statuses.index'))
+                    <a class="btn btn-sm btn-outline-light" href="{{ route('government.company-verification-statuses.index') }}" @if (request()->routeIs('government.company-verification-statuses.index', 'government.company-verification-statuses.show')) aria-current="page" @endif>Monitoring verifikasi</a>
+                @endif
                 <span class="text-white small">{{ auth()->user()->name }} · Admin Pemerintah</span>
             @endcan
         </div>

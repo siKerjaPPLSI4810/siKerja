@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\CompanyInspection;
 use App\Models\CompanyProfile;
+use App\Models\CompanyVerificationStatusHistory;
 use App\Models\User;
 use App\Services\CompanyInspectionService;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,7 @@ class CompanyInspectionStoreTest extends TestCase
         ]);
         $this->beforeApplicationDestroyed(fn () => DB::purge('inspection_store_testing'));
         $this->assertSame(':memory:', DB::connection()->getDatabaseName());
-        foreach (['0001_01_01_000000_create_users_table.php', '2026_11_06_073058_create_sikerja_table.php', '2026_11_17_000001_create_company_inspections_table.php'] as $file) {
+        foreach (['0001_01_01_000000_create_users_table.php', '2026_11_06_073058_create_sikerja_table.php', '2026_11_17_000001_create_company_inspections_table.php', '2026_11_18_000001_create_company_verification_status_histories_table.php'] as $file) {
             (require database_path('migrations/'.$file))->up();
         }
     }
@@ -60,6 +61,7 @@ class CompanyInspectionStoreTest extends TestCase
         }
         $this->postJson($this->url($company), $this->payload($company))->assertStatus($status);
         $this->assertSame(0, CompanyInspection::count());
+        $this->assertSame(0, CompanyVerificationStatusHistory::count());
     }
 
     public static function roles(): array
@@ -221,6 +223,7 @@ class CompanyInspectionStoreTest extends TestCase
             $response->assertUnprocessable()->assertJsonValidationErrors('decision');
             $this->assertSame(0, CompanyInspection::count());
             $this->assertSame('pending', $company->fresh()->verification_status);
+            $this->assertSame(0, CompanyVerificationStatusHistory::count());
 
             return;
         }
@@ -242,6 +245,7 @@ class CompanyInspectionStoreTest extends TestCase
         $this->assertSame($publicMessages[$decision], $company->fresh()->verification_notes);
         $this->assertNotSame($inspection->notes, $company->fresh()->verification_notes);
         $this->assertSame($admin->id, $company->fresh()->verified_by);
+        $this->assertSame($decision === 'pending' ? 0 : 1, CompanyVerificationStatusHistory::count());
     }
 
     public static function decisionMatrix(): array
@@ -381,5 +385,111 @@ class CompanyInspectionStoreTest extends TestCase
         $this->assertStringNotContainsString($marker, $company->toJson());
         $this->assertSame($marker, $record->notes);
         $this->assertSame($marker, $record->fresh()->notes);
+    }
+
+    #[DataProvider('historyDecisions')]
+    public function test_real_transition_records_one_safe_event_and_rejects_replay(string $decision, string $oss, string $administration): void
+    {
+        $admin = $this->admin();
+        $company = CompanyProfile::factory()->create(['company_document_path' => 'company_documents/SYNTHETIC_SECRET.pdf']);
+        $input = array_replace($this->payload($company), [
+            'decision' => $decision, 'oss_check_result' => $oss, 'administrative_result' => $administration,
+            'notes' => 'SYNTHETIC_INTERNAL_NOTES_DO_NOT_COPY',
+        ]);
+        $before = now('UTC')->startOfSecond();
+        $this->postJson($this->url($company), $input)->assertOk();
+        $event = CompanyVerificationStatusHistory::sole();
+        $this->assertSame($company->id, $event->company_profile_id);
+        $this->assertSame($company->fresh()->inspection->id, $event->company_inspection_id);
+        $this->assertSame($event->company_profile_id, $event->companyInspection->company_profile_id);
+        $this->assertSame(1, $event->sequence);
+        $this->assertSame('status_changed', $event->event_type);
+        $this->assertSame('pending', $event->old_status);
+        $this->assertSame($decision, $event->new_status);
+        $this->assertSame($admin->id, $event->actor_user_id);
+        $this->assertSame($admin->name, $event->actor_name_snapshot);
+        $this->assertSame('manual_inspection_decision', $event->reason_code);
+        $this->assertTrue($event->changed_at->greaterThanOrEqualTo($before));
+        $this->assertTrue($event->changed_at->lessThanOrEqualTo(now('UTC')));
+        $expected = $decision === 'verified'
+            ? 'Pemeriksaan manual: OSS sesuai; administrasi lengkap; keputusan verified.'
+            : 'Pemeriksaan manual: OSS tidak sesuai; administrasi tidak lengkap; keputusan rejected.';
+        $this->assertSame($expected, $event->reason);
+        foreach (['SYNTHETIC_INTERNAL_NOTES_DO_NOT_COPY', 'company_documents/', 'company_snapshot'] as $private) {
+            $this->assertStringNotContainsString($private, json_encode($event->getAttributes()));
+        }
+        $this->postJson($this->url($company), $this->payload($company))->assertConflict();
+        $this->assertSame(1, CompanyVerificationStatusHistory::count());
+    }
+
+    public static function historyDecisions(): array
+    {
+        return [['verified', 'matched', 'complete'], ['rejected', 'mismatched', 'incomplete']];
+    }
+
+    public function test_pending_updates_and_conflicts_do_not_create_events(): void
+    {
+        $this->admin();
+        $company = CompanyProfile::factory()->create();
+        $input = array_replace($this->payload($company), ['decision' => 'pending', 'oss_check_result' => 'unconfirmed']);
+        $this->postJson($this->url($company), $input)->assertOk();
+        $this->postJson($this->url($company), $input)->assertConflict();
+        $newInput = array_replace($this->payload($company), ['decision' => 'pending', 'oss_check_result' => 'unconfirmed', 'notes' => 'Updated synthetic findings']);
+        $this->postJson($this->url($company), $newInput)->assertOk();
+        $this->postJson($this->url($company), array_replace($newInput, ['reviewed_by' => 999]))
+            ->assertUnprocessable();
+        $this->assertSame(0, CompanyVerificationStatusHistory::count());
+        $this->assertSame(1, CompanyInspection::count());
+    }
+
+    #[DataProvider('historyRollbackModes')]
+    public function test_history_insert_failure_rolls_back_entire_transaction(bool $existingInspection): void
+    {
+        $admin = $this->admin();
+        $company = CompanyProfile::factory()->create();
+        if ($existingInspection) {
+            $this->postJson($this->url($company), array_replace($this->payload($company), [
+                'decision' => 'pending', 'oss_check_result' => 'unconfirmed',
+            ]))->assertOk();
+        }
+        $beforeCompany = $company->fresh()->getAttributes();
+        $beforeInspection = $company->fresh()->inspection?->getAttributes();
+        DB::statement("CREATE TRIGGER fail_history_insert BEFORE INSERT ON company_verification_status_histories BEGIN SELECT RAISE(ABORT, 'synthetic history failure'); END");
+        try {
+            app(CompanyInspectionService::class)->record($company, $admin, $this->payload($company));
+            $this->fail('History insert must fail.');
+        } catch (\Illuminate\Database\QueryException $exception) {
+            $this->assertStringContainsString('synthetic history failure', $exception->getMessage());
+        }
+        $this->assertSame($beforeCompany, $company->fresh()->getAttributes());
+        $this->assertSame($beforeInspection, $company->fresh()->inspection?->getAttributes());
+        $this->assertSame(0, CompanyVerificationStatusHistory::count());
+        DB::statement('DROP TRIGGER fail_history_insert');
+        $this->postJson($this->url($company), $this->payload($company))->assertOk();
+        $this->assertSame(1, CompanyVerificationStatusHistory::sole()->sequence);
+    }
+
+    public static function historyRollbackModes(): array
+    {
+        return [[false], [true]];
+    }
+
+    public function test_legacy_read_does_not_backfill_and_real_changes_allocate_company_sequences(): void
+    {
+        $this->admin();
+        $legacy = CompanyProfile::factory()->create(['verification_status' => 'verified']);
+        $this->getJson(route('government.company-inspections.api.show', $legacy))->assertOk();
+        $this->assertSame(0, CompanyVerificationStatusHistory::count());
+        // Existing PBI 3.1.1 allows a first inspection on legacy data; preserve it.
+        $this->postJson($this->url($legacy), array_replace($this->payload($legacy), [
+            'decision' => 'pending', 'oss_check_result' => 'unconfirmed',
+        ]))->assertOk();
+        $this->postJson($this->url($legacy), $this->payload($legacy))->assertOk();
+        $other = CompanyProfile::factory()->create();
+        $this->postJson($this->url($other), $this->payload($other))->assertOk();
+        $this->assertSame([1, 2], $legacy->verificationStatusHistories()->orderBy('sequence')->pluck('sequence')->all());
+        $this->assertSame(['verified', 'pending'], $legacy->verificationStatusHistories()->orderBy('sequence')->pluck('old_status')->all());
+        $this->assertSame([1], $other->verificationStatusHistories()->pluck('sequence')->all());
+        $this->assertSame(3, CompanyVerificationStatusHistory::count());
     }
 }

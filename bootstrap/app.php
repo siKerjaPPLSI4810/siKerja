@@ -22,13 +22,13 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*', 'pemerintah/api/pemeriksaan-perusahaan', 'pemerintah/api/pemeriksaan-perusahaan/*') || $request->expectsJson(),
+            fn (Request $request) => $request->is('api/*', 'pemerintah/api/pemeriksaan-perusahaan', 'pemerintah/api/pemeriksaan-perusahaan/*', 'pemerintah/api/status-verifikasi-perusahaan', 'pemerintah/api/status-verifikasi-perusahaan/*') || $request->expectsJson(),
         );
         $exceptions->respond(function (\Symfony\Component\HttpFoundation\Response $response) {
             $request = request();
             $status = $response->getStatusCode();
 
-            if (($request->is('pemerintah/api/pemeriksaan-perusahaan', 'pemerintah/api/pemeriksaan-perusahaan/*')
+            if (($request->is('pemerintah/api/pemeriksaan-perusahaan', 'pemerintah/api/pemeriksaan-perusahaan/*', 'pemerintah/api/status-verifikasi-perusahaan', 'pemerintah/api/status-verifikasi-perusahaan/*')
                     || ($request->is('pemerintah/pemeriksaan-perusahaan/*/hasil') && $request->expectsJson()))
                 && in_array($status, [401, 403, 404, 409, 422], true)) {
                 $body = json_decode($response->getContent(), true);

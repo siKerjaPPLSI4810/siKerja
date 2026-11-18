@@ -29,7 +29,7 @@ class CompanyInspectionWebTest extends TestCase
         ]);
         $this->beforeApplicationDestroyed(fn () => DB::purge('inspection_web_testing'));
         $this->assertSame(':memory:', DB::connection()->getDatabaseName());
-        foreach (['0001_01_01_000000_create_users_table.php', '2026_11_06_073058_create_sikerja_table.php', '2026_11_17_000001_create_company_inspections_table.php'] as $file) {
+        foreach (['0001_01_01_000000_create_users_table.php', '2026_11_06_073058_create_sikerja_table.php', '2026_11_17_000001_create_company_inspections_table.php', '2026_11_18_000001_create_company_verification_status_histories_table.php'] as $file) {
             (require database_path('migrations/'.$file))->up();
         }
         Storage::fake('local');

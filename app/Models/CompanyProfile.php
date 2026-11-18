@@ -13,7 +13,7 @@ class CompanyProfile extends Model
     use HasFactory;
 
     // Legacy notes may contain government findings. Never serialize them by default.
-    protected $hidden = ['verification_notes', 'inspection', 'verified_by', 'verifier'];
+    protected $hidden = ['verification_notes', 'inspection', 'verified_by', 'verifier', 'verificationStatusHistories'];
 
     protected $fillable = [
         'user_id',
@@ -47,6 +47,11 @@ class CompanyProfile extends Model
     public function inspection(): HasOne
     {
         return $this->hasOne(CompanyInspection::class);
+    }
+
+    public function verificationStatusHistories(): HasMany
+    {
+        return $this->hasMany(CompanyVerificationStatusHistory::class);
     }
 
     public function isVerified(): bool
