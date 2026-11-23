@@ -16,9 +16,10 @@ class CompanySprint1Test extends TestCase
     /**
      * PBI 2.1.1 - Perusahaan dapat mendaftar akun dan mengirim identitas perusahaan (Skenario Valid).
      */
-    public function test_pbi_2_1_1_company_can_register_with_valid_identity_and_see_verified_result(): void
+    public function test_pbi_2_1_1_company_registration_waits_for_government_even_with_valid_override(): void
     {
         Storage::fake('public');
+        Storage::fake('company_documents');
 
         $document = UploadedFile::fake()->create('legalitas_pt_maju.pdf', 500, 'application/pdf');
 
@@ -49,7 +50,7 @@ class CompanySprint1Test extends TestCase
 
         $this->assertDatabaseHas('company_profiles', [
             'company_name' => 'PT Maju Bersama Teknologi',
-            'verification_status' => 'verified',
+            'verification_status' => 'pending',
             'province' => 'Jawa Barat',
             'city' => 'Bandung',
         ]);
@@ -57,8 +58,8 @@ class CompanySprint1Test extends TestCase
         $profilePage = $this->get(route('company.profile.index'));
         $profilePage->assertStatus(200);
         $profilePage->assertSee('PT Maju Bersama Teknologi');
-        $profilePage->assertSee('TERVERIFIKASI (VALID)');
-        $profilePage->assertSee('SKENARIO VALID (TERVERIFIKASI)');
+        $profilePage->assertSee('BELUM DAPAT DIPASTIKAN (MENUNGGU PENINJAUAN)');
+        $profilePage->assertSee('SKENARIO BELUM DAPAT DIPASTIKAN');
     }
 
     /**
@@ -67,6 +68,7 @@ class CompanySprint1Test extends TestCase
     public function test_pbi_2_1_1_company_can_register_and_see_unconfirmed_pending_result(): void
     {
         Storage::fake('public');
+        Storage::fake('company_documents');
 
         $document = UploadedFile::fake()->create('nib_akta.pdf', 300, 'application/pdf');
 
@@ -173,9 +175,9 @@ class CompanySprint1Test extends TestCase
         ]);
         $responseValid->assertStatus(200);
         $responseValid->assertJson([
-            'status' => 'verified',
-            'status_label' => 'TERVERIFIKASI (VALID)',
-            'valid' => true,
+            'status' => 'pending',
+            'status_label' => 'BELUM DAPAT DIPASTIKAN (MENUNGGU PENINJAUAN)',
+            'valid' => false,
         ]);
 
         // Skenario 2: Tidak Valid (NPWP salah)
@@ -297,6 +299,7 @@ class CompanySprint1Test extends TestCase
     public function test_pbi_2_1_2_company_profile_update_is_saved_successfully(): void
     {
         Storage::fake('public');
+        Storage::fake('company_documents');
 
         $user = User::factory()->create([
             'role' => 'perusahaan',
@@ -353,5 +356,8 @@ class CompanySprint1Test extends TestCase
         // Unduh dokumen
         $downloadResponse = $this->actingAs($user)->get(route('company.profile.document.download'));
         $downloadResponse->assertStatus(200);
+        $storedPath = $profile->fresh()->company_document_path;
+        Storage::disk('company_documents')->assertExists($storedPath);
+        Storage::disk('public')->assertMissing($storedPath);
     }
 }

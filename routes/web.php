@@ -14,6 +14,44 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+Route::prefix('pemerintah/status-verifikasi-perusahaan')->name('government.company-verification-statuses.')
+    ->middleware(['auth', 'can:access-government'])->group(function () {
+        $controller = \App\Http\Controllers\Government\CompanyVerificationMonitoringController::class;
+        Route::get('/', [$controller, 'index'])->name('index');
+        Route::get('/{companyProfile}', [$controller, 'show'])->whereNumber('companyProfile')->name('show');
+    });
+
+Route::prefix('pemerintah/api/status-verifikasi-perusahaan')->name('government.company-verification-statuses.api.')
+    ->middleware(['auth', 'can:access-government'])->group(function () {
+        $controller = \App\Http\Controllers\Government\CompanyVerificationMonitoringDataController::class;
+        Route::get('/', [$controller, 'index'])->name('index');
+        Route::get('/{companyProfile}/riwayat', [$controller, 'history'])->whereNumber('companyProfile')->name('history');
+        Route::get('/{companyProfile}', [$controller, 'show'])->whereNumber('companyProfile')->name('show');
+        Route::patch('/{companyProfile}', [$controller, 'update'])->whereNumber('companyProfile')->name('update');
+    });
+
+Route::prefix('pemerintah/pemeriksaan-perusahaan')->name('government.company-inspections.')
+    ->middleware(['auth', 'can:access-government'])->group(function () {
+        Route::get('/', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'index'])->name('index');
+        Route::get('/{companyProfile}/dokumen', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'document'])
+            ->whereNumber('companyProfile')->name('document');
+        Route::get('/{companyProfile}', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'show'])
+            ->whereNumber('companyProfile')->name('show');
+    });
+
+Route::post('/pemerintah/pemeriksaan-perusahaan/{companyProfile}/hasil', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'store'])
+    ->whereNumber('companyProfile')->middleware(['auth', 'can:access-government'])
+    ->name('government.company-inspections.store');
+
+Route::prefix('pemerintah/api/pemeriksaan-perusahaan')
+    ->name('government.company-inspections.api.')
+    ->middleware(['auth', 'can:access-government'])
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\Government\CompanyInspectionDataController::class, 'index'])->name('index');
+        Route::get('/{companyProfile}', [\App\Http\Controllers\Government\CompanyInspectionDataController::class, 'show'])
+            ->whereNumber('companyProfile')->name('show');
+    });
+
 Route::get('/', function (Request $request, NikVerificationService $nikService) {
     if (Auth::check()) {
         if (Auth::user()->role === 'perusahaan') {

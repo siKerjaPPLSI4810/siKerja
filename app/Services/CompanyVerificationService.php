@@ -83,6 +83,8 @@ class CompanyVerificationService
         ?int $ignoreProfileId = null,
         ?string $requestedScenario = null
     ): array {
+        // Company-side checks validate input only; an override is never official evidence.
+        $requestedScenario = null;
         $errors = [];
         $companyName = trim($companyName);
         $cleanNpwp = $this->cleanNpwp($rawNpwp);
