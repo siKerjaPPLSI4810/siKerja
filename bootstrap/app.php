@@ -22,13 +22,13 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*', 'pemerintah/api/pemeriksaan-perusahaan', 'pemerintah/api/pemeriksaan-perusahaan/*', 'pemerintah/api/status-verifikasi-perusahaan', 'pemerintah/api/status-verifikasi-perusahaan/*', 'pemerintah/api/pemeriksaan-lowongan', 'pemerintah/api/pemeriksaan-lowongan/*') || $request->expectsJson(),
+            fn (Request $request) => $request->is('api/*', 'pemerintah/api/pemeriksaan-perusahaan', 'pemerintah/api/pemeriksaan-perusahaan/*', 'pemerintah/api/status-verifikasi-perusahaan', 'pemerintah/api/status-verifikasi-perusahaan/*', 'pemerintah/api/pemeriksaan-lowongan', 'pemerintah/api/pemeriksaan-lowongan/*', 'pemerintah/api/monitoring-lowongan', 'pemerintah/api/monitoring-lowongan/*') || $request->expectsJson(),
         );
         $exceptions->respond(function (\Symfony\Component\HttpFoundation\Response $response) {
             $request = request();
             $status = $response->getStatusCode();
 
-            if (($request->is('pemerintah/api/pemeriksaan-perusahaan', 'pemerintah/api/pemeriksaan-perusahaan/*', 'pemerintah/api/status-verifikasi-perusahaan', 'pemerintah/api/status-verifikasi-perusahaan/*', 'pemerintah/api/pemeriksaan-lowongan', 'pemerintah/api/pemeriksaan-lowongan/*')
+            if (($request->is('pemerintah/api/pemeriksaan-perusahaan', 'pemerintah/api/pemeriksaan-perusahaan/*', 'pemerintah/api/status-verifikasi-perusahaan', 'pemerintah/api/status-verifikasi-perusahaan/*', 'pemerintah/api/pemeriksaan-lowongan', 'pemerintah/api/pemeriksaan-lowongan/*', 'pemerintah/api/monitoring-lowongan', 'pemerintah/api/monitoring-lowongan/*')
                     || ($request->is('pemerintah/pemeriksaan-perusahaan/*/hasil') && $request->expectsJson()))
                 && in_array($status, [401, 403, 404, 409, 422], true)) {
                 $body = json_decode($response->getContent(), true);

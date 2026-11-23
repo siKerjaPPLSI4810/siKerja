@@ -40,6 +40,16 @@ Route::prefix('pemerintah/api/pemeriksaan-lowongan')->name('government.job-inspe
 
 Route::prefix('pemerintah')->name('government.')
     ->middleware(['auth', 'can:access-government'])->group(function () {
+        Route::post('/api/monitoring-lowongan/{jobPosting}/penandaan', [\App\Http\Controllers\Government\JobMonitoringFlagController::class, 'store'])
+            ->whereNumber('jobPosting')->name('job-monitoring.api.flags.store');
+        Route::delete('/api/monitoring-lowongan/{jobPosting}/penandaan', [\App\Http\Controllers\Government\JobMonitoringFlagController::class, 'destroy'])
+            ->whereNumber('jobPosting')->name('job-monitoring.api.flags.destroy');
+        Route::get('/monitoring-lowongan', [\App\Http\Controllers\Government\JobMonitoringController::class, 'index'])
+            ->name('job-monitoring.index');
+        Route::get('/monitoring-lowongan/{jobPosting}', [\App\Http\Controllers\Government\JobMonitoringController::class, 'show'])
+            ->whereNumber('jobPosting')->name('job-monitoring.show');
+        Route::get('/api/monitoring-lowongan', [\App\Http\Controllers\Government\JobMonitoringDataController::class, 'index'])
+            ->name('job-monitoring.api.index');
         Route::get('/pemeriksaan-lowongan', [\App\Http\Controllers\Government\JobInspectionController::class, 'index'])
             ->name('job-inspections.index');
         Route::get('/pemeriksaan-lowongan/{jobPosting}', [\App\Http\Controllers\Government\JobInspectionController::class, 'show'])
