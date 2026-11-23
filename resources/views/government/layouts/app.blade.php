@@ -16,8 +16,11 @@
             @else
                 <span class="navbar-brand fw-bold">SIkERJA</span>
             @endif
-            <span class="text-white me-auto">Pemeriksaan Perusahaan</span>
+            <span class="text-white me-auto">{{ request()->routeIs('government.job-inspections.*') ? 'Pemeriksaan Lowongan' : 'Pemeriksaan Perusahaan' }}</span>
             @can('access-government')
+                @if (Route::has('government.job-inspections.index'))
+                    <a class="btn btn-sm btn-outline-light" href="{{ route('government.job-inspections.index') }}" @if (request()->routeIs('government.job-inspections.*')) aria-current="page" @endif>Pemeriksaan lowongan</a>
+                @endif
                 @if (Route::has('government.company-verification-statuses.index'))
                     <a class="btn btn-sm btn-outline-light" href="{{ route('government.company-verification-statuses.index') }}" @if (request()->routeIs('government.company-verification-statuses.index', 'government.company-verification-statuses.show')) aria-current="page" @endif>Monitoring verifikasi</a>
                 @endif
