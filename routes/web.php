@@ -30,13 +30,38 @@ Route::prefix('pemerintah/api/status-verifikasi-perusahaan')->name('government.c
         Route::patch('/{companyProfile}', [$controller, 'update'])->whereNumber('companyProfile')->name('update');
     });
 
-Route::prefix('pemerintah/pemeriksaan-perusahaan')->name('government.company-inspections.')
+Route::prefix('pemerintah/api/pemeriksaan-lowongan')->name('government.job-inspections.api.')
     ->middleware(['auth', 'can:access-government'])->group(function () {
-        Route::get('/', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'index'])->name('index');
-        Route::get('/{companyProfile}/dokumen', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'document'])
-            ->whereNumber('companyProfile')->name('document');
-        Route::get('/{companyProfile}', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'show'])
-            ->whereNumber('companyProfile')->name('show');
+        $controller = \App\Http\Controllers\Government\JobInspectionDataController::class;
+        Route::get('/', [$controller, 'index'])->name('index');
+        Route::get('/{jobPosting}', [$controller, 'show'])->whereNumber('jobPosting')->name('show');
+        Route::post('/{jobPosting}/keputusan', [$controller, 'store'])->whereNumber('jobPosting')->name('decisions.store');
+    });
+
+Route::prefix('pemerintah')->name('government.')
+    ->middleware(['auth', 'can:access-government'])->group(function () {
+        Route::post('/api/monitoring-lowongan/{jobPosting}/penandaan', [\App\Http\Controllers\Government\JobMonitoringFlagController::class, 'store'])
+            ->whereNumber('jobPosting')->name('job-monitoring.api.flags.store');
+        Route::delete('/api/monitoring-lowongan/{jobPosting}/penandaan', [\App\Http\Controllers\Government\JobMonitoringFlagController::class, 'destroy'])
+            ->whereNumber('jobPosting')->name('job-monitoring.api.flags.destroy');
+        Route::get('/monitoring-lowongan', [\App\Http\Controllers\Government\JobMonitoringController::class, 'index'])
+            ->name('job-monitoring.index');
+        Route::get('/monitoring-lowongan/{jobPosting}', [\App\Http\Controllers\Government\JobMonitoringController::class, 'show'])
+            ->whereNumber('jobPosting')->name('job-monitoring.show');
+        Route::get('/api/monitoring-lowongan', [\App\Http\Controllers\Government\JobMonitoringDataController::class, 'index'])
+            ->name('job-monitoring.api.index');
+        Route::get('/pemeriksaan-lowongan', [\App\Http\Controllers\Government\JobInspectionController::class, 'index'])
+            ->name('job-inspections.index');
+        Route::get('/pemeriksaan-lowongan/{jobPosting}', [\App\Http\Controllers\Government\JobInspectionController::class, 'show'])
+            ->whereNumber('jobPosting')->name('job-inspections.show');
+
+        Route::prefix('pemeriksaan-perusahaan')->name('company-inspections.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'index'])->name('index');
+            Route::get('/{companyProfile}/dokumen', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'document'])
+                ->whereNumber('companyProfile')->name('document');
+            Route::get('/{companyProfile}', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'show'])
+                ->whereNumber('companyProfile')->name('show');
+        });
     });
 
 Route::post('/pemerintah/pemeriksaan-perusahaan/{companyProfile}/hasil', [\App\Http\Controllers\Government\CompanyInspectionController::class, 'store'])

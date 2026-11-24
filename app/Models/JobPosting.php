@@ -8,11 +8,19 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 
 class JobPosting extends Model
 {
     use HasFactory;
+
+    protected $hidden = ['reviewFlag'];
+
+    public function reviewFlag(): HasOne
+    {
+        return $this->hasOne(JobPostingReviewFlag::class);
+    }
 
     // Kolom untuk pembuatan & pengubahan lowongan 
     protected $fillable = [
