@@ -6,7 +6,7 @@
         $filters = $filters ?? [];
         $companyChoices = collect($companies ?? []);
         $categoryChoices = collect($categories ?? []);
-        $hasFilters = collect($filters)->only(['q', 'company', 'category', 'location'])->contains(fn ($value) => filled($value));
+        $hasFilters = collect($filters)->only(['q', 'company', 'category', 'location'])->contains(fn ($value) => filled($value)) || ($filters['status'] ?? 'published') !== 'published';
         $indexAvailable = Route::has('government.job-monitoring.index');
         $detailAvailable = Route::has('government.job-monitoring.show');
         $statusLabels = ['draft' => 'Draf', 'pending_approval' => 'Menunggu Tinjauan', 'published' => 'Disetujui / Tayang', 'rejected' => 'Ditolak / Perlu Perbaikan', 'closed' => 'Ditutup'];
@@ -18,7 +18,7 @@
         </div>
     </div>
     <div class="alert alert-info" role="note">
-        Cakupan sementara: hanya lowongan berstatus published, termasuk deadline lewat atau belum tersedia. Definisi final lowongan aktif dan cakupan multi-status: <strong>Belum disepakati</strong>.
+        Monitoring menampilkan Published secara default, termasuk deadline lewat atau belum tersedia. Pilih Closed untuk melihat lowongan yang ditutup. Status lain tidak termasuk monitoring.
     </div>
 
     <div class="card mb-4">
@@ -76,7 +76,7 @@
                                     <option value="{{ $value }}" @selected(($filters['status'] ?? '') === (string) $value)>{{ $label }} ({{ $value }})</option>
                                 @endforeach
                             </select>
-                            <div id="job-monitoring-status-help" class="form-text">Saat ini hanya published; cakupan multi-status: Belum disepakati.</div>
+                            <div id="job-monitoring-status-help" class="form-text">Pilih Published (Tayang) atau Closed (Ditutup). Reset mengembalikan Published.</div>
                             @error('status') <div id="job-monitoring-status-error" class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-12 d-flex flex-wrap gap-2">
@@ -105,7 +105,7 @@
         </div>
         <div class="table-responsive" role="region" aria-label="Daftar monitoring lowongan kerja" tabindex="0">
             <table class="table table-bordered table-hover align-middle mb-0 small">
-                <caption class="visually-hidden">Informasi lowongan untuk monitoring pemerintah. Cakupan lowongan aktif masih menunggu kesepakatan.</caption>
+                <caption class="visually-hidden">Informasi lowongan untuk monitoring pemerintah. Cakupan monitoring adalah Published atau Closed sesuai filter status.</caption>
                 <thead class="table-light">
                     <tr>
                         <th scope="col">Judul lowongan</th>

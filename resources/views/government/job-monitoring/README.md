@@ -1,5 +1,24 @@
 # Monitoring lowongan — Subtask 3.2.2.1–3.2.2.5
 
+## Kontrak terbaru — penyempurnaan Tahap 1, 24 November 2026
+
+Bagian ini menggantikan pembatasan published-only dan catatan belum disepakati pada catatan tahapan lama di bawah. Tim memilih aturan berdasarkan pelimpahan pemilihan oleh PM Amirza Hasya dan instruksi implementasi pengguna.
+
+- GET daftar HTML dan API tetap memakai URL, middleware pemerintah aktif, CSRF sesi, struktur JSON dan header cache existing. Parameter status menerima satu nilai: published atau closed. Tidak dikirim, null, kosong atau whitespace menjadi published; nilai lain/array ditolak validator.
+- Default dan Reset tetap Published. Closed tersedia sebagai pilihan tersendiri, bukan gabungan semua status. Deadline lewat/null tidak menyembunyikan lowongan atau otomatis mengubah status tayang. approved_by bukan penentu cakupan monitoring.
+- Pencarian judul/perusahaan tetap memakai OR terkelompok dan parameter query terikat. Filter perusahaan/kategori/lokasi, urutan ID stabil dan parameter pagination tetap dipertahankan. Closed dihitung sebagai filter pada empty state.
+- Opsi perusahaan/kategori berasal dari seluruh lowongan published/closed, independen dari status terpilih, filter lain dan halaman aktif; tanpa opsi dummy.
+- Detail menggunakan JobMonitoringQuery::findMonitored dan hanya mengizinkan published/closed. Status lain/ID tidak valid tetap 404. Badge Published adalah Disetujui / Tayang; Closed adalah Ditutup.
+- Form penandaan baru hanya tersedia pada Published. Service existing tetap menolak penandaan Closed dengan 409. Tanda lama pada Closed tetap terlihat dan dapat dicabut menggunakan form sesi/CSRF/konfirmasi existing; identitas/waktu pencabutan disimpan tanpa mengubah atribut lowongan. Setelah dicabut, Closed tetap tidak menyediakan form tanda baru.
+- Tidak mengubah scope model published(), resource JSON, route, migration, service approval atau aturan keputusan PBI 3.2.1. Tolak/Minta Perbaikan tetap rejected dan belum dibedakan secara terstruktur.
+- Tahap 2 kini membersihkan approved_by dan rejection_reason pada cabang pengajuan ulang existing di CompanyJobController. Edit biasa dan penutupan ke Closed mempertahankan metadata. Metadata verifikasi perusahaan tetap; review Rifqi atas perubahan Feature 2.2 wajib sebelum merge. Lihat [review pengajuan ulang](../job-inspections/COMPANY_RESUBMISSION_REVIEW.md).
+
+Hasil terakhir setelah Tahap 2: 529 PHPUnit PASS, 0 FAIL, 1 SKIPPED; 4.795 assertions. Tes symlink Windows dilewati; seluruh 17 tes JavaScript dan 26 pemeriksaan HTTP/SQLite PASS. Agen memverifikasi alur browser/database; pengguna mengonfirmasi desktop, mobile 375px, detail Closed, Hapus Tanda Cancel dan OK. Bukti otomatis dipisahkan dari konfirmasi pengguna di [QA_REVIEW.md](QA_REVIEW.md). Konkurensi paralel MySQL belum diuji.
+
+## Catatan tahapan sebelum penyempurnaan 24 November 2026
+
+Bagian berikut dipertahankan sebagai riwayat implementasi/QA. Pernyataan published-only atau keputusan masih terbuka di sini bukan kontrak terbaru.
+
 Status terbaru: daftar/detail HTML telah terhubung pada 3.2.2.3 menggunakan government.layouts.app dan Bootstrap existing. API baca tersedia sejak 3.2.2.2. Subtask 3.2.2.5 menambah tabel/model tanda terpisah; aturan keputusan dan alur pemeriksaan existing tidak diubah. Catatan rancangan awal di bawah diperbarui dengan kontrak integrasi.
 
 ## Struktur

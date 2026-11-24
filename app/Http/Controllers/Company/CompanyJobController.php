@@ -190,6 +190,7 @@ class CompanyJobController extends Controller
         
         if ($job->status === 'published' || $request->boolean('resubmit')) {
             $validated['status'] = 'pending_approval';
+            $validated['approved_by'] = null;
             $validated['rejection_reason'] = null;
             $msg = 'Informasi lowongan berhasil diperbarui dan diajukan ulang ke Pengawas Kemnaker untuk peninjauan.';
         } else {
@@ -217,6 +218,7 @@ class CompanyJobController extends Controller
         } else {
             $job->update([
                 'status' => 'pending_approval',
+                'approved_by' => null,
                 'rejection_reason' => null,
             ]);
             $msg = 'Lowongan berhasil diajukan untuk peninjauan Pengawas Kemnaker.';

@@ -28,8 +28,8 @@ class ListJobMonitoringRequest extends FormRequest
             'company' => ['nullable', 'integer', 'min:1', 'max:'.PHP_INT_MAX],
             'category' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
-            // Multi-status monitoring is not agreed; never widen the published scope.
-            'status' => ['nullable', 'string', Rule::in(['published'])],
+            // Monitoring accepts one selected status; blank defaults to published in the shared query.
+            'status' => ['nullable', 'string', Rule::in(['published', 'closed'])],
             'page' => ['sometimes', 'integer', 'min:1', 'max:100000'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:50'],
         ];

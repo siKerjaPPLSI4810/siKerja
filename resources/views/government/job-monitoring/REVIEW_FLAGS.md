@@ -1,5 +1,13 @@
 # Penandaan tinjauan lanjutan — Subtask 3.2.2.5
 
+## Status terbaru — 24 November 2026
+
+PM Hasya mendelegasikan pemilihan aturan kepada tim sesuai PBI dan aturan proyek. Monitoring default published, termasuk deadline lewat/null, dan dapat memilih closed; detail keduanya tersedia. Penandaan baru tetap hanya published. Tanda lama pada closed tetap terlihat dan dapat dicabut tanpa mengubah status/metadata lowongan. Aturan penandaan manual yang telah disetujui tidak berubah.
+
+QA manual desktop, mobile 375px, detail Closed, Cancel (tanda tetap aktif) dan OK (tanda dicabut, status tetap Closed) PASS menurut konfirmasi pengguna. Ini tidak dianggap bukti otomatis. Rincian QA terbaru dan batas konkurensi paralel MySQL ada di QA_REVIEW.md. Catatan published-only/keputusan terbuka di bawah adalah riwayat tahap sebelum penyempurnaan ini.
+
+## Arsip implementasi penandaan awal
+
 ## Persetujuan PM
 
 Pada instruksi implementasi 23 November 2026, pengguna menyampaikan persetujuan PM Amirza Hasya atas penandaan manual, alasan wajib di-trim maksimal 1.000 karakter, penyimpanan terpisah, larangan menimpa tanda aktif, pencatatan petugas/waktu pencabutan, satu siklus terakhir, dan persistensi tanda saat status lowongan berubah/diterbitkan ulang.

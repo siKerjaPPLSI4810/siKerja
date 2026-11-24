@@ -130,7 +130,7 @@ class GovernmentJobMonitoringApiTest extends GovernmentJobInspectionTestCase
             ['q', ['bad']], ['q', str_repeat('a', 256)], ['category', ['bad']], ['category', str_repeat('a', 256)],
             ['location', ['bad']], ['location', str_repeat('a', 256)],
             ['company', 0], ['company', -1], ['company', 'abc'], ['company', ['1']], ['company', str_repeat('9', 40)],
-            ['status', 'closed'], ['status', 'rejected'], ['status', 'pending_approval'], ['status', 'draft'], ['status', ['published']],
+            ['status', 'unknown'], ['status', 'rejected'], ['status', 'pending_approval'], ['status', 'draft'], ['status', ['published']],
             ['page', 0], ['page', 100001], ['page', [1]], ['per_page', 0], ['per_page', 51], ['per_page', [1]],
         ];
     }

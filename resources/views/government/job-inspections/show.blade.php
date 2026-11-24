@@ -72,7 +72,7 @@
             <section class="card mb-4" aria-labelledby="job-decision-heading" data-job-decision-panel data-job-id="{{ $job->id }}">
                 <div class="card-body">
                     <h2 class="h5" id="job-decision-heading">Keputusan pemeriksaan</h2>
-                    <p class="small text-muted">Aturan pemeriksaan masih berupa rancangan kerja dan menunggu konfirmasi final PM Hasya.</p>
+                    <p class="small text-muted">PM Hasya telah mendelegasikan pemilihan aturan pemeriksaan kepada tim sesuai PBI dan aturan proyek. Tolak dan Minta Perbaikan sama-sama memakai status rejected dan belum dapat dibedakan secara terstruktur.</p>
                     <noscript><div class="alert alert-warning">Aktifkan JavaScript untuk mengirim keputusan dari halaman ini.</div></noscript>
                     <div class="alert alert-info" role="status" aria-live="polite" tabindex="-1" data-decision-status hidden></div>
                     <div class="alert alert-danger" role="alert" tabindex="-1" data-decision-error hidden>

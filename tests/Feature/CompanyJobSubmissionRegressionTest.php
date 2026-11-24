@@ -56,30 +56,88 @@ class CompanyJobSubmissionRegressionTest extends GovernmentJobInspectionTestCase
         ];
     }
 
-    public function test_published_edit_and_rejected_resubmission_preserve_existing_metadata_behavior(): void
+    public function test_published_edit_and_explicit_resubmissions_clear_only_job_decision_metadata(): void
     {
         $company = $this->company();
         $oldApprover = User::factory()->create(['role' => 'pemerintah'])->id;
-        foreach (['published', 'rejected'] as $status) {
+        $companyBefore = $company->fresh()->getRawOriginal();
+        foreach (['published', 'rejected', 'draft', 'closed'] as $status) {
             $job = $this->listing(['status' => $status, 'approved_by' => $oldApprover, 'rejection_reason' => 'Catatan lama'], $company);
             $input = $this->input();
-            if ($status === 'rejected') $input['resubmit'] = true;
+            if ($status !== 'published') $input['resubmit'] = true;
             $this->put(route('company.jobs.update', $job->id), $input)->assertRedirect(route('company.jobs.index'));
             $this->assertSame('pending_approval', $job->fresh()->status);
             $this->assertNull($job->fresh()->rejection_reason);
-            // Known coordination item, deliberately not changed by this UI subtask.
-            $this->assertSame($oldApprover, $job->fresh()->approved_by);
+            $this->assertNull($job->fresh()->approved_by);
+            $this->assertSame($companyBefore, $company->fresh()->getRawOriginal());
         }
     }
 
     public function test_toggle_closes_published_and_resubmits_closed_without_changing_rules(): void
     {
         $company = $this->company();
-        $job = $this->listing(['status' => 'published'], $company);
+        $oldApprover = User::factory()->create(['role' => 'pemerintah'])->id;
+        $job = $this->listing(['status' => 'published', 'approved_by' => $oldApprover, 'rejection_reason' => 'Catatan lama'], $company);
+        $companyBefore = $company->fresh()->getRawOriginal();
         $this->post(route('company.jobs.toggle', $job->id))->assertRedirect(route('company.jobs.index'));
         $this->assertSame('closed', $job->fresh()->status);
+        $this->assertSame($oldApprover, $job->fresh()->approved_by);
+        $this->assertSame('Catatan lama', $job->fresh()->rejection_reason);
         $this->post(route('company.jobs.toggle', $job->id))->assertRedirect(route('company.jobs.index'));
         $this->assertSame('pending_approval', $job->fresh()->status);
+        $this->assertNull($job->fresh()->approved_by);
+        $this->assertNull($job->fresh()->rejection_reason);
+        $this->assertSame($companyBefore, $company->fresh()->getRawOriginal());
+    }
+
+    #[DataProvider('ordinaryEditStatuses')]
+    public function test_ordinary_edit_does_not_reset_decision_or_company_metadata(string $status): void
+    {
+        $company = $this->company();
+        $approver = User::factory()->create(['role' => 'pemerintah'])->id;
+        $job = $this->listing(['status' => $status, 'approved_by' => $approver, 'rejection_reason' => 'Catatan tetap'], $company);
+        $companyBefore = $company->fresh()->getRawOriginal();
+        $this->put(route('company.jobs.update', $job->id), $this->input() + ['resubmit' => false])->assertRedirect(route('company.jobs.index'));
+        $this->assertSame($status, $job->fresh()->status);
+        $this->assertSame($approver, $job->fresh()->approved_by);
+        $this->assertSame('Catatan tetap', $job->fresh()->rejection_reason);
+        $this->assertSame($companyBefore, $company->fresh()->getRawOriginal());
+    }
+
+    public static function ordinaryEditStatuses(): array
+    {
+        return [['draft'], ['pending_approval'], ['rejected'], ['closed']];
+    }
+
+    #[DataProvider('toggleSubmissionStatuses')]
+    public function test_existing_toggle_submission_clears_job_metadata_without_touching_company(string $status): void
+    {
+        $company = $this->company();
+        $approver = User::factory()->create(['role' => 'pemerintah'])->id;
+        $job = $this->listing(['status' => $status, 'approved_by' => $approver, 'rejection_reason' => 'Catatan lama'], $company);
+        $companyBefore = $company->fresh()->getRawOriginal();
+        $this->post(route('company.jobs.toggle', $job->id))->assertRedirect(route('company.jobs.index'));
+        $this->assertSame('pending_approval', $job->fresh()->status);
+        $this->assertNull($job->fresh()->approved_by);
+        $this->assertNull($job->fresh()->rejection_reason);
+        $this->assertSame($companyBefore, $company->fresh()->getRawOriginal());
+    }
+
+    public static function toggleSubmissionStatuses(): array
+    {
+        // Existing toggle treats every non-published status as submission, including pending replay.
+        return [['draft'], ['rejected'], ['pending_approval']];
+    }
+
+    public function test_invalid_resubmission_does_not_clear_metadata_or_write_company(): void
+    {
+        $company = $this->company();
+        $job = $this->listing(['status' => 'rejected', 'approved_by' => User::factory()->create(['role' => 'pemerintah'])->id, 'rejection_reason' => 'Catatan tetap'], $company);
+        $before = $job->fresh()->getRawOriginal();
+        $companyBefore = $company->fresh()->getRawOriginal();
+        $this->put(route('company.jobs.update', $job->id), array_merge($this->input(), ['resubmit' => true, 'deadline' => today()->toDateString()]))->assertSessionHasErrors('deadline');
+        $this->assertSame($before, $job->fresh()->getRawOriginal());
+        $this->assertSame($companyBefore, $company->fresh()->getRawOriginal());
     }
 
     public function test_company_cannot_update_or_toggle_another_company_job(): void

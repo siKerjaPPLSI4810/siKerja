@@ -2,7 +2,7 @@
 
 Diperbarui: 23 November 2026. Branch: `Hasya/Sprint1`. Baseline integrasi: `78c6ca33f54374c288c731ffdcb2419cced7e753`.
 
-Status: rancangan kerja keputusan dipilih pengguna untuk implementasi API 3.2.1.3; **masih memerlukan konfirmasi PM Hasya**. Aturan di bawah merupakan rancangan implementasi, bukan kebijakan final atau bukti persetujuan PM/deployment.
+Status terbaru, 24 November 2026: PM Amirza Hasya telah mendelegasikan pemilihan aturan kepada tim sesuai PBI dan aturan proyek. Tim memilih mempertahankan aturan approval/rejection existing. Dokumen ini mencatat aturan terpilih dan keterbatasannya, bukan klaim siap deployment.
 
 ## 1. Tujuan dan pembagian pekerjaan
 
@@ -27,7 +27,7 @@ Sumber: `C:/Users/ACER/Documents/siKerja-References/PBI_siKERJA_Kelompok_C_FINAL
 | Task per PBI, baris 128, 3.2.1.4 | Membuat tampilan detail lowongan, kualifikasi, dan informasi gaji | Informasi pekerjaan harus dapat diperiksa |
 | Story Rinci (Draf Awal), baris 33–35 | Antrean menunggu pemeriksaan; detail posisi, persyaratan, lokasi, dan gaji lengkap; keputusan beserta keterangan | Konteks pendukung, bukan pengganti AC revisi. Pengajuan belum disetujui tidak tampil publik |
 
-PBI tidak merinci syarat perusahaan verified, deadline keputusan, panjang alasan, status perbaikan atau metadata pemeriksa. Rancangan kerja terpilih pada bagian 4 berasal dari instruksi implementasi pengguna dan masih menunggu konfirmasi PM; prototype bukan sumber persetujuan bisnis. Pemeriksaan upah wilayah belum diadopsi.
+PBI tidak merinci syarat perusahaan verified, deadline keputusan, panjang alasan, status perbaikan atau metadata pemeriksa. Aturan terpilih pada bagian 4 berasal dari instruksi implementasi pengguna dan keputusan tim setelah pelimpahan PM; prototype bukan sumber persetujuan bisnis. Pemeriksaan upah wilayah belum diadopsi.
 
 ## 3. Perilaku aplikasi existing
 
@@ -66,15 +66,15 @@ Deadline hari ini belum dianggap lewat oleh `JobPosting::applicationDeadlinePass
 ### Pengajuan ulang dan perubahan existing
 
 - Buat dengan is_draft: draft; pengajuan langsung: pending_approval. Keduanya melewati validasi form.
-- Edit published atau update dengan resubmit: pending_approval dan rejection_reason dibersihkan; approved_by lama tetap tersimpan.
+- Edit published atau update dengan resubmit: pending_approval; approved_by dan rejection_reason dibersihkan pada penyempurnaan Tahap 2.
 - Edit tanpa resubmit pada status selain published: status tetap.
-- Toggle published: closed. Toggle status selain published: pending_approval dan alasan dibersihkan, tanpa validasi form/deadline ulang.
+- Toggle published: closed dan metadata keputusan tetap. Toggle status selain published: pending_approval; approved_by dan rejection_reason dibersihkan, tanpa menambah validasi form/deadline ulang.
 
-Sumber: `CompanyJobController::store`, `update`, `toggleStatus`. Perubahan terhadap mekanisme perusahaan tersebut membutuhkan koordinasi; tidak diubah pada subtask ini.
+Sumber: `CompanyJobController::store`, `update`, `toggleStatus`. Tahap 2 hanya menambah dua assignment approved_by = null pada cabang pengajuan ulang existing; metadata verifikasi perusahaan tetap. Perubahan Feature 2.2 ini memerlukan review Rifqi sebelum merge; lihat COMPANY_RESUBMISSION_REVIEW.md.
 
-## 4. Rancangan implementasi keputusan — menunggu konfirmasi PM Hasya
+## 4. Aturan keputusan yang dipertahankan tim setelah pelimpahan PM
 
-Instruksi implementasi memilih rancangan kerja berikut. Ini menggantikan sel Belum disepakati untuk kebutuhan coding/testing, bukan mencatat persetujuan final PM.
+Tim mempertahankan aturan existing berikut sesuai pelimpahan pemilihan oleh PM. Tidak menambah aturan, status atau metadata keputusan baru.
 
 | Keputusan / action API | Status asal → tujuan | Kriteria | Catatan dan metadata |
 | --- | --- | --- | --- |
@@ -93,7 +93,7 @@ Perusahaan belum verified atau data/deadline tidak valid menghasilkan 422 tanpa 
 - Payload: action (`approve`, `reject`, `request_changes`), rejection_reason sesuai matriks, dan token CSRF sesi saat dibutuhkan. Tidak menerima perubahan isi lowongan dalam endpoint keputusan.
 - Sukses 200 JSON: message dan data berisi id/status/approved_by/rejection_reason. Tidak mengirim model perusahaan atau catatan internal pemerintah. Respons sukses/401/403/404/409/422 menggunakan kebijakan JSON existing dengan no-store, private; 419 mengikuti CSRF Laravel existing.
 - `StoreJobInspectionDecisionRequest` dan `JobInspectionDecisionValidation` berbagi validasi payload dengan `JobInspectionDecisionService::record` agar service aman dipanggil UI 3.2.1.5 tanpa melewati HTTP.
-- `JobPostingValidation` berisi aturan/pesan Feature 2.2 existing yang dipakai ulang. Controller perusahaan hanya beralih memanggil komponen ini; alur create/update/toggle/pengajuan ulang tidak diubah.
+- `JobPostingValidation` berisi aturan/pesan Feature 2.2 existing yang dipakai ulang. Ekstraksi validator mempertahankan aturan existing; penyempurnaan Tahap 2 hanya menambah reset approved_by pada pengajuan ulang, tanpa mengubah validator atau pemilihan cabang create/update/toggle.
 - UI 3.2.1.5 memakai endpoint keputusan existing; tidak menambah endpoint mutasi lainnya. API baca dan query bersama tetap dipertahankan.
 
 ## 6. Transaksi, penguncian, dan batas konsistensi
@@ -104,18 +104,18 @@ Pada database yang mendukung row lock, penguncian dirancang agar keputusan kedua
 
 Status diperiksa kembali, tetapi belum ada token versi/revisi pengajuan untuk mendeteksi perubahan konten yang tetap pending atau pengajuan ulang setelah siklus keputusan. API memeriksa data tersimpan terbaru; kebutuhan versi/audit tambahan masih memerlukan keputusan PM dan tidak ditambahkan lewat migration/field baru.
 
-## 7. Konfirmasi PM dan koordinasi yang masih diperlukan
+## 7. Keputusan tim, keterbatasan dan review yang masih diperlukan
 
 | Topik | Status rancangan / tindak lanjut |
 | --- | --- |
-| Pemetaan keputusan, perusahaan verified, kelengkapan dan deadline | Sudah dipilih sebagai rancangan implementasi di bagian 4; **menunggu konfirmasi PM Hasya** |
-| Tolak vs Minta Perbaikan | Sama-sama rejected + rejection_reason; konfirmasi penerimaan keterbatasan pelaporan dan batas panjang catatan perbaikan |
-| Pengajuan ulang Feature 2.2 | Existing membersihkan alasan tetapi belum membersihkan approved_by. Koordinasikan reset metadata dengan Rifqi; tidak diubah di sini. Keputusan baru Tolak/Perbaikan sudah membersihkan approved_by |
+| Pemetaan keputusan, perusahaan verified, kelengkapan dan deadline | Aturan existing bagian 4 dipertahankan tim berdasarkan pelimpahan PM Hasya |
+| Tolak vs Minta Perbaikan | Sama-sama rejected + rejection_reason sesuai pilihan tim; keterbatasan pembedaan tetap ada. Tidak menambahkan batas panjang catatan perbaikan di luar kontrak existing |
+| Pengajuan ulang Feature 2.2 | Tahap 2 membersihkan approved_by dan rejection_reason pada cabang pengajuan ulang existing; **review Rifqi diperlukan sebelum merge**. Edit biasa dan penutupan mempertahankan metadata; verifikasi perusahaan tidak diubah |
 | Metadata pemeriksa dan sejarah keputusan | Setujui mengisi approved_by; penolakan/perbaikan mengosongkannya. Kebutuhan actor/history tambahan dan versi pengajuan belum ditetapkan |
 | Pemeriksaan upah wilayah | Belum diadopsi; Rp1.000.000 adalah minimum aplikasi existing, bukan bukti kepatuhan upah wilayah |
 | Konkurensi deployment | SQLite saja tidak memverifikasi perilaku database produksi; perlukan lingkungan database testing terisolasi bila pengujian paralel diperlukan, bukan MySQL Cloud bersama |
 
-Subtask 3.2.1.3 mencakup API baca dan simpan; 3.2.1.5 kini memakai endpoint/service keputusan yang sama untuk UI agar aturan tidak terduplikasi. Implementasi tidak berarti persetujuan PM final atau siap deployment.
+Subtask 3.2.1.3 mencakup API baca dan simpan; 3.2.1.5 kini memakai endpoint/service keputusan yang sama untuk UI agar aturan tidak terduplikasi. Pelimpahan PM tidak menghilangkan kebutuhan review lintas fitur atau membuktikan kesiapan deployment.
 
 ## 8. Pengujian
 
@@ -129,6 +129,6 @@ Hasil pengujian tahap ini dicatat di README. Hasil QA visual dan konfirmasi manu
 
 Tiga form keputusan pada detail pending memakai action approve/reject/request_changes dan rejection_reason sesuai rancangan bagian 4, dengan sesi/CSRF existing. Konfirmasi Setujui, field required, serta batas 1000 khusus Tolak mengikuti backend tanpa menambah kriteria kelayakan di frontend. Backend tetap menentukan hasil keputusan.
 
-UI menampilkan pesan sukses dan status baru, kemudian mengunci/menyembunyikan tindakan. Request berjalan tidak dapat dikirim ulang; 422 membuka form untuk koreksi, sedangkan kegagalan akses/status/sesi dan hasil tidak pasti memerlukan muat ulang. Tidak ada perubahan aturan atau alur Feature 3.1/2.2. Konfirmasi final PM Hasya tetap terbuka.
+UI menampilkan pesan sukses dan status baru, kemudian mengunci/menyembunyikan tindakan. Request berjalan tidak dapat dikirim ulang; 422 membuka form untuk koreksi, sedangkan kegagalan akses/status/sesi dan hasil tidak pasti memerlukan muat ulang. Tidak ada perubahan aturan atau alur Feature 3.1/2.2. Aturan existing dipertahankan sesuai keputusan tim setelah pelimpahan PM; keterbatasan pembedaan keputusan dan pengujian konkurensi tetap dicatat.
 
 Validasi tahap ini: 156 PHPUnit PASS, 0 FAIL, 1.414 assertions pada enam file terkait; 17 tes handler JavaScript PASS, 0 FAIL dengan DOM/Fetch sintetis. Ini bukan bukti pengujian visual browser atau transaksi paralel MySQL. Seluruh tes database memakai SQLite :memory: terisolasi tanpa .env repository atau database bersama.

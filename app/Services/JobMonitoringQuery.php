@@ -17,7 +17,7 @@ class JobMonitoringQuery
             'company' => isset($input['company']) ? (int) $input['company'] : null,
             'category' => $input['category'] ?? '',
             'location' => $input['location'] ?? '',
-            'status' => 'published',
+            'status' => filled($input['status'] ?? null) ? $input['status'] : 'published',
             'per_page' => (int) ($input['per_page'] ?? 15),
         ];
     }
@@ -26,7 +26,7 @@ class JobMonitoringQuery
     {
         $filters = $this->filters($input);
         // Status is authoritative; expired/null deadlines and null approvers remain visible.
-        $query = JobPosting::query()->published()->with(['company:id,company_name', 'reviewFlag:id,job_posting_id,cleared_at'])
+        $query = JobPosting::query()->where('status', $filters['status'])->with(['company:id,company_name', 'reviewFlag:id,job_posting_id,cleared_at'])
             ->select(['id', 'company_profile_id', 'title', 'category', 'location', 'status', 'deadline']);
         $pattern = fn (string $value): string => '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $value).'%';
         if ($filters['q'] !== '') {
@@ -52,17 +52,17 @@ class JobMonitoringQuery
 
     public function companies(): Collection
     {
-        return CompanyProfile::query()->whereHas('jobPostings', fn (Builder $jobs) => $jobs->published())
+        return CompanyProfile::query()->whereHas('jobPostings', fn (Builder $jobs) => $jobs->whereIn('status', ['published', 'closed']))
             ->select(['id', 'company_name'])->orderBy('company_name')->orderBy('id')->get();
     }
 
     public function categories(): Collection
     {
-        return JobPosting::query()->published()->distinct()->orderBy('category')->pluck('category');
+        return JobPosting::query()->whereIn('status', ['published', 'closed'])->distinct()->orderBy('category')->pluck('category');
     }
 
-    public function findPublished(string $identifier): JobPosting
+    public function findMonitored(string $identifier): JobPosting
     {
-        return JobPosting::query()->published()->with(['company:id,company_name', 'reviewFlag.flagger:id,name', 'reviewFlag.clearer:id,name'])->findOrFail($identifier);
+        return JobPosting::query()->whereIn('status', ['published', 'closed'])->with(['company:id,company_name', 'reviewFlag.flagger:id,name', 'reviewFlag.clearer:id,name'])->findOrFail($identifier);
     }
 }

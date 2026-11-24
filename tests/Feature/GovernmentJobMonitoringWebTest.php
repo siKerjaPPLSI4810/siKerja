@@ -89,7 +89,7 @@ class GovernmentJobMonitoringWebTest extends GovernmentJobInspectionTestCase
 
     public static function otherStatuses(): array
     {
-        return [['draft'], ['pending_approval'], ['rejected'], ['closed'], ['unknown']];
+        return [['draft'], ['pending_approval'], ['rejected'], ['unknown']];
     }
 
     #[DataProvider('invalidIds')]
@@ -155,8 +155,9 @@ class GovernmentJobMonitoringWebTest extends GovernmentJobInspectionTestCase
     {
         $this->admin(); $job = $this->job();
         $this->get(self::URL)->assertOk()->assertSee(route('government.job-monitoring.show', $job), false);
-        $job->update(['status' => 'closed']); $this->get(self::URL.'/'.$job->id)->assertNotFound();
-        $this->assertSame('closed', $job->fresh()->status);
+        $job->update(['status' => 'closed']); $this->get(self::URL.'/'.$job->id)->assertOk()->assertSee('Ditutup')->assertDontSee('Tandai untuk Ditinjau');
+        $job->update(['status' => 'pending_approval']); $this->get(self::URL.'/'.$job->id)->assertNotFound();
+        $this->assertSame('pending_approval', $job->fresh()->status);
     }
 
     #[DataProvider('invalidFilters')]
@@ -168,6 +169,6 @@ class GovernmentJobMonitoringWebTest extends GovernmentJobInspectionTestCase
 
     public static function invalidFilters(): array
     {
-        return [['q', ['bad']], ['q', str_repeat('a', 256)], ['page', 0], ['status', 'closed'], ['company', 'abc']];
+        return [['q', ['bad']], ['q', str_repeat('a', 256)], ['page', 0], ['status', 'unknown'], ['company', 'abc']];
     }
 }

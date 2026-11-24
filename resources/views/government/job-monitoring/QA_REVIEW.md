@@ -1,5 +1,91 @@
 # QA PBI 3.2.2 — Subtask 3.2.2.6
 
+## Finalisasi QA Feature 3.2 — 24 November 2026
+
+Baseline Git 9441f2ba85044ef9ed7f4daeebc28bcb22341f67, Hasya/Sprint1. Ringkasan ini menggantikan status belum diuji/menunggu keputusan pada arsip Tahap 1 dan QA awal di bawah. Referensi agen: FINAL_QA_REVIEW.md di TEMP. Hanya temuan yang diperlukan diringkas; password dummy, token, cookie, key, database dan helper QA tidak disalin.
+
+### Bukti pengujian otomatis dan pengamatan agen
+
+| Pemeriksaan | Hasil dan asal bukti |
+| --- | --- |
+| Suite penuh setelah Tahap 2, 530 tes | **529 PASS, 0 FAIL, 1 SKIPPED; 4.795 assertions**, SQLite terisolasi |
+| Regresi Feature 3.2 dan perusahaan | **287 PASS, 0 FAIL; 2.907 assertions**, SQLite :memory: |
+| Seluruh JavaScript | **17 PASS, 0 FAIL** |
+| Integrasi HTTP/SQLite lokal | **26 PASS**, hasil individual pada laporan TEMP; bukan 26 tes browser |
+| Browser agen | Login pemerintah/perusahaan, default Published, filter Closed/kombinasi, detail Closed, pencarian kosong, reset, pagination dan pencabutan tanda berhasil |
+| Browser + snapshot SQLite agen | Edit biasa/penutupan mempertahankan metadata; edit Published/pengajuan ulang membersihkan approved_by dan rejection_reason; record perusahaan tetap identik; approval PBI 3.2.1 berhasil |
+
+Satu SKIPPED adalah CompanyDocumentSecurityTest::test_symlink_outside_root_is_rejected_when_platform_supports_links: Windows tidak mengizinkan symlink sintetis. Bukan PASS dan bukan bukti verifikasi Linux. Suite penuh di atas dijalankan sebelum finalisasi satu kalimat teks Blade; rerun tes yang terdampak finalisasi dicatat terpisah di bawah, tanpa mengubah angka suite penuh sebelumnya.
+
+Lingkungan HTTP/browser memakai server loopback port 8875, bootstrap/environment/storage/cache di TEMP dan hanya koneksi SQLite QA yang path-nya diperiksa. Tidak membaca .env repository atau mengakses MySQL Cloud. Agen memverifikasi pencabutan fixture 5: satu DELETE logis, cleared_by dan cleared_at tersimpan, status tetap Closed serta metadata lowongan tidak berubah. Agen tidak berhasil mengendalikan dialog Cancel/OK secara eksplisit. Screenshot desktop/mobile agen terpotong/terskala; keterbatasan alat ini tidak disamakan dengan bug UI.
+
+### QA manual terakhir — konfirmasi pengguna
+
+| Skenario | Hasil yang dilaporkan pengguna |
+| --- | --- |
+| Desktop | PASS |
+| Mobile 375px | PASS |
+| Detail Closed dan badge Ditutup | PASS |
+| Hapus Tanda → Cancel | PASS; tanda tetap aktif |
+| Hapus Tanda → OK | PASS; tanda berhasil dicabut, status tetap Closed |
+
+Lima hasil ini diatribusikan kepada pengguna, bukan eksekusi otomatis atau pengamatan ulang agen. Tidak mengarang screenshot, rekaman Network, dimensi desktop atau identitas fixture manual yang tidak disampaikan. Konfirmasi terbaru melengkapi bagian visual/dialog yang belum terverifikasi agen pada laporan TEMP; tidak menghapus batas bukti historis.
+
+### Aturan akhir dan review sebelum merge
+
+PM Amirza Hasya telah mendelegasikan pemilihan aturan sesuai PBI kepada tim. Tim mempertahankan approval/rejection existing; Tolak dan Minta Perbaikan tetap rejected/rejection_reason dan **belum dibedakan secara terstruktur**. Published adalah default monitoring, termasuk deadline lewat/null; closed dapat dipilih, status lain ditolak. Tanda baru hanya Published; tanda lama Closed dapat dicabut.
+
+Reset approved_by/rejection_reason sudah diimplementasikan secara minimal pada dua cabang pengajuan ulang existing. Penutupan dan edit biasa mempertahankan metadata; record verifikasi perusahaan tetap. **Review Rifqi atas perubahan Feature 2.2 masih diperlukan sebelum merge**; lihat ../job-inspections/COMPANY_RESUBMISSION_REVIEW.md. Tidak mengklaim review Rifqi telah diberikan. Konkurensi paralel MySQL belum diuji. Tidak ada migration baru atau perubahan logika keputusan pada finalisasi ini.
+
+### Pemeriksaan akhir sebelum staging
+
+Perubahan source pada finalisasi hanya satu kalimat penjelasan Blade keputusan. Tidak ada perubahan logika approval, payload, service, route, middleware atau schema. GovernmentJobInspectionDecisionUiTest dan GovernmentJobInspectionShowTest dijalankan ulang: **31 PASS, 0 FAIL; 310 assertions**, exit 0, dengan SQLite :memory: dan environment kosong. Seluruh JavaScript dijalankan ulang: **17 PASS, 0 FAIL**. Lint 9 file PHP kandidat, sintaks JavaScript dan git diff --check lulus. Angka suite penuh 529 PASS/1 SKIPPED/4.795 assertions tetap hasil Tahap 2 sebelumnya, bukan klaim rerun suite penuh setelah perubahan teks.
+
+Listener 127.0.0.1:8875 dicocokkan dengan executable C:/php84/php.exe serta router TEMP QA sesi ini. Server dihentikan melalui handle proses sesi. Probe socket sesudah penghentian timeout dan tidak dipakai sebagai bukti port tertutup; pemeriksaan Windows kemudian memastikan tidak ada listener port 8875 dan proses QA 11676 sudah tidak ada. Tidak menghentikan proses lain. Fixture, SQLite, session, key, log, helper dan laporan TEMP tidak dimasukkan staging. Tidak membuat commit, push, PR atau merge; PR #7 tidak dimodifikasi.
+
+## Arsip QA Tahap 1 dan QA awal — sebelum finalisasi
+
+Hasil dan batas bukti berikut dipertahankan sebagai riwayat, bukan status terbaru.
+
+## QA perubahan Published/Closed — 24 November 2026
+
+Baseline kode: 9441f2ba85044ef9ed7f4daeebc28bcb22341f67, branch Hasya/Sprint1. Hasil pada bagian ini berasal dari eksekusi baru untuk penyempurnaan Tahap 1, bukan pemakaian ulang hasil QA browser sebelumnya.
+
+### Bukti otomatis baru
+
+| Pemeriksaan | Hasil |
+| --- | --- |
+| Seluruh PHPUnit, 522 tes | **521 PASS, 0 FAIL, 1 SKIPPED; 4.706 assertions**, exit 0 |
+| Regresi terarah akhir Feature 3.2 dan pengajuan perusahaan | **279 PASS, 0 FAIL; 2.818 assertions**, exit 0 |
+| Tes status integrasi baru | **13 PASS, 0 FAIL; 180 assertions**, exit 0 setelah perbaikan snapshot fixture |
+| Seluruh JavaScript, node --test tests/Frontend/*.test.cjs | **17 PASS, 0 FAIL**, exit 0 |
+| Lint PHP yang baru/berubah | 7 file lulus |
+| node --check public/js/job-inspection-decision.js; git diff --check | Lulus |
+
+Satu tes SKIPPED berasal dari CompanyDocumentSecurityTest::test_symlink_outside_root_is_rejected_when_platform_supports_links. Tes menjalankan markTestSkipped ketika OS tidak mengizinkan symlink sintetis. Kasus ini dikonfirmasi lagi secara terpisah (1 SKIPPED, 1 assertion), bukan dianggap PASS atau bukti pengujian Linux.
+
+Cakupan baru: status default/tidak dikirim/kosong/whitespace, Published/Closed, deadline lama/null, OR pencarian tetap terkelompok, kombinasi filter, pagination dan Reset, katalog perusahaan/kategori lintas status serta halaman, konsistensi HTML/API dan allowlist JSON. Closed mempunyai detail/badge sesuai, tanpa form tanda baru; request penandaan langsung tetap 409. Tanda aktif lama, alasan escaped, petugas/waktu dan tombol pencabutan tetap tersedia pada Closed. Form pencabutan tanpa CSRF menghasilkan 419; token benar berhasil, metadata pencabutan tersimpan dan atribut lowongan tetap identik. Regresi mencakup status lain ditolak, otorisasi, privasi, PBI 3.2.1 serta pengajuan perusahaan existing.
+
+Regresi terarah pertama: 279 tes, 278 PASS/1 FAIL, 2.818 assertions. Satu kegagalan berasal dari fixture baru yang mengambil snapshot model sebelum nilai default database di-refresh (quota/approved_by dan urutan atribut). Diperbaiki hanya dengan fresh()->getRawOriginal() pada snapshot awal. Tes baru kemudian 13 PASS/180 assertions dan suite penuh di atas PASS; bukan perubahan aturan bisnis atau mutasi data aplikasi.
+
+### Isolasi dan prosedur
+
+- Tes Feature 3.2 memakai GovernmentJobInspectionTestCase existing: environment kosong di TEMP, cache/storage TEMP, hanya SQLite :memory: dengan foreign key aktif sebelum migration tes.
+- Suite penuh memakai bootstrap PHP sementara di TEMP, tanpa mengubah tests/TestCase.php atau tes anggota lain. Bootstrap memuat autoloader repository lalu mendefinisikan Tests\TestCase dengan metode createApplication isolasi existing. Path bootstrap aplikasi diarahkan absolut ke clone Hasya; environment dialihkan ke folder kosong sebelum bootstrap Laravel; konfigurasi koneksi setelah LoadConfiguration hanya SQLite :memory:. Kelas tes kemudian memakai koneksi SQLite :memory: sendiri atau RefreshDatabase pada SQLite tersebut.
+- Perintah suite penuh: PHP C:/php84/php.exe, vendor/phpunit/phpunit/phpunit --bootstrap <folder-TEMP>/bootstrap.php --do-not-cache-result. Bootstrap sementara tidak dimasukkan ke repository. Migration hanya berjalan pada SQLite pengujian terisolasi.
+- Tidak membaca/mengubah .env, mengakses MySQL Cloud, memasang dependency atau memakai database QA browser lama. Percobaan runner yang tidak menghasilkan keluaran dihentikan melalui handle proses sesi sebelum eksekusi ulang; tidak menghentikan proses pengguna lain.
+- Diff controller/tes Feature 2.2, service approval/penandaan, scope JobPosting, route/bootstrap aplikasi dan migration tetap kosong.
+
+### QA manual dan batas hasil
+
+Tidak membuka browser atau mengulang QA desktop/mobile, dialog Hapus Tanda Cancel/OK, maupun interaksi form Closed pada tahap ini. Assertion Blade/HTTP dalam PHPUnit bukan bukti manual browser. Hasil mobile/Cancel/OK tanggal 23 November di bawah tetap konfirmasi pengguna untuk versi sebelumnya; tidak dipindahkan menjadi bukti versi Published/Closed. Perlu QA visual ulang pada Published/Closed, terutama filter, badge Closed, form tersembunyi dan pencabutan tanda lama.
+
+Konkurensi paralel/row lock MySQL belum diuji. Reset approved_by/rejection_reason pada pengajuan ulang belum diimplementasikan; menunggu koordinasi Rifqi (Feature 2.2). Aturan approval/rejection existing dipertahankan sesuai keputusan tim terbaru, dengan keterbatasan Tolak/Minta Perbaikan sama-sama rejected. Tidak ada migration baru, commit, push atau perubahan PR #7; tidak meminta perubahan status Draft atau merge.
+
+## Arsip QA 23 November 2026 — sebelum Published/Closed
+
+Seluruh hasil dan kendala berikut dipertahankan dengan konteks versi awal, termasuk perbedaan konfirmasi pengguna dan snapshot helper fixture 16.
+
 Tanggal: 23 November 2026. Branch Hasya/Sprint1, checkpoint e931b02e96196e4750a0329dcd4d715449d5e20f.
 
 **Hasil terbaru: regresi otomatis/HTTP lulus. QA mobile serta Hapus Tanda Cancel/OK dikonfirmasi selesai oleh pengguna.** Hasil manual tersebut berasal dari laporan pengguna, bukan pengamatan ulang agen atau kesimpulan helper SQLite. Konkurensi paralel MySQL belum diuji.

@@ -1,5 +1,17 @@
 # Feature 3.2 — Daftar dan detail pengajuan lowongan kerja
 
+## Status terbaru — finalisasi 24 November 2026
+
+PM Amirza Hasya telah mendelegasikan pemilihan aturan Feature 3.2 kepada tim dengan tetap mengikuti PBI dan aturan proyek. Tim mempertahankan aturan approval/rejection existing: approve ke published dengan syarat existing; reject dan request_changes tetap rejected dengan rejection_reason. Keduanya **belum dibedakan secara terstruktur**. Ini bukan klaim seluruh keterbatasan atau pengujian deployment sudah selesai.
+
+Tahap 2 menambahkan reset approved_by pada dua cabang pengajuan ulang CompanyJobController yang sudah membersihkan rejection_reason. Edit biasa tanpa pengajuan ulang dan penutupan ke closed tidak mereset kedua metadata. Metadata verifikasi perusahaan tidak diubah. Perubahan ini **memerlukan review Rifqi sebelum merge**; lihat [COMPANY_RESUBMISSION_REVIEW.md](COMPANY_RESUBMISSION_REVIEW.md).
+
+Hasil akhir lintas fitur, bukti HTTP/SQLite, serta konfirmasi manual pengguna dicatat di [QA monitoring](../job-monitoring/QA_REVIEW.md). Konkurensi paralel MySQL belum diuji. Tidak ada migration baru atau perubahan service keputusan dalam penyempurnaan ini.
+
+## Arsip tahapan sebelum finalisasi
+
+Bagian di bawah merupakan riwayat implementasi. Catatan menunggu konfirmasi PM/reset metadata pada tahapan lama digantikan status terbaru di atas dan CRITERIA_REVIEW.md.
+
 Baseline integrasi: `78c6ca33f54374c288c731ffdcb2419cced7e753` (PR #6, Feature 3.1 Fadlan). Implementasi daftar 3.2.1.1 dan detail 3.2.1.4 menggunakan dependency composer.lock. Pengujian daftar sebelumnya lulus 25 tests/192 assertions; pengujian gabungan detail dan regresi daftar pada 23 November 2026 lulus 47 tests, 342 assertions, 0 kegagalan (exit 0).
 
 ## Route dan akses

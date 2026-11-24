@@ -18,7 +18,7 @@
                 </div>
                 <div>
                     <span class="visually-hidden">Status: </span>
-                    <span class="badge bg-success text-wrap">Disetujui / Tayang</span>
+                    <span class="badge {{ $job->status === 'published' ? 'bg-success' : 'bg-secondary' }} text-wrap">{{ $job->status === 'published' ? 'Disetujui / Tayang' : 'Ditutup' }}</span>
                 </div>
             </div>
         </div>
@@ -67,7 +67,7 @@
             <p class="text-break mb-0" style="white-space: pre-line">{{ filled($job->requirements) ? $job->requirements : 'Belum tersedia' }}</p>
         </div>
     </section>
-    <p class="small text-muted">Cakupan monitoring sementara hanya published, termasuk deadline lewat/null. Definisi aktif final dan cakupan multi-status: Belum disepakati.</p>
+    <p class="small text-muted">Monitoring mencakup Published dan Closed. Deadline lewat atau belum tersedia tidak otomatis mengubah status tayang. Penandaan baru hanya untuk Published.</p>
     @php($flag = $job->reviewFlag)
     <section class="card mb-4" aria-labelledby="review-flag-heading">
         <div class="card-body">
@@ -90,6 +90,7 @@
                 @if ($flag)
                     <p class="small text-muted">Tanda terakhir dicabut oleh {{ $flag->clearer?->name ?? 'Petugas tidak tersedia' }} pada {{ $flag->cleared_at?->format('d M Y H:i:s') }} {{ config('app.timezone') }}.</p>
                 @endif
+                @if ($job->status === 'published')
                 <form method="POST" action="{{ route('government.job-monitoring.api.flags.store', ['jobPosting' => $job->id]) }}">
                     @csrf
                     <input type="hidden" name="_flag_form" value="1">
@@ -99,6 +100,9 @@
                     @error('reason') <div id="review-flag-reason-error" class="invalid-feedback">{{ $message }}</div> @enderror
                     <button type="submit" class="btn btn-warning mt-2">Tandai untuk Ditinjau</button>
                 </form>
+                @else
+                    <p class="text-muted">Lowongan ditutup tidak dapat diberi tanda baru.</p>
+                @endif
             @endif
         </div>
     </section>

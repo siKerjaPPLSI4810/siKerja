@@ -108,8 +108,8 @@ class GovernmentJobMonitoringFiltersTest extends GovernmentJobInspectionTestCase
         $response->assertDontSee('Perusahaan Pending Saja')->assertDontSee('Perusahaan Tanpa Lowongan')->assertDontSee('Kategori Pending Saja');
         $dom=$this->xpath($response->getContent());
         $options=$dom->query('//select[@name="status"]/option');
-        $this->assertSame(1,$options->length); $this->assertSame('published',$options->item(0)->getAttribute('value'));
-        $response->assertSee('Saat ini hanya published')->assertSee('Belum disepakati')->assertDontSee('Semua status dalam cakupan monitoring');
+        $this->assertSame(2,$options->length); $this->assertSame('published',$options->item(0)->getAttribute('value'));
+        $response->assertSee('Pilih Published (Tayang) atau Closed (Ditutup)')->assertDontSee('Belum disepakati')->assertDontSee('Semua status dalam cakupan monitoring');
     }
 
     public function test_valid_but_unmatched_filter_values_remain_visible_without_dummy_choices(): void
@@ -138,7 +138,7 @@ class GovernmentJobMonitoringFiltersTest extends GovernmentJobInspectionTestCase
     public static function invalidFilters(): array
     {
         return [ ['company',0], ['company',['bad']], ['category',['bad']], ['location',str_repeat('a',256)],
-            ['status','closed'], ['status','rejected'], ['status','pending_approval'], ['status','draft'], ['status',['published']],
+            ['status','unknown'], ['status','rejected'], ['status','pending_approval'], ['status','draft'], ['status',['published']],
             ['q',['bad']], ['per_page',51] ];
     }
 }

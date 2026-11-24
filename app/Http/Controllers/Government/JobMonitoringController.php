@@ -23,13 +23,13 @@ class JobMonitoringController extends Controller
         return response()->view('government.job-monitoring.index', [
             'jobs' => $jobs, 'filters' => $filters,
             'companies' => $query->companies(), 'categories' => $query->categories(),
-            'statusOptions' => ['published' => 'Disetujui / Tayang'],
+            'statusOptions' => ['published' => 'Disetujui / Tayang', 'closed' => 'Ditutup'],
         ])->header('Cache-Control', 'no-store, private');
     }
 
     public function show(string $jobPosting, JobMonitoringQuery $query): Response
     {
-        return response()->view('government.job-monitoring.show', ['job' => $query->findPublished($jobPosting)])
+        return response()->view('government.job-monitoring.show', ['job' => $query->findMonitored($jobPosting)])
             ->header('Cache-Control', 'no-store, private');
     }
 }
